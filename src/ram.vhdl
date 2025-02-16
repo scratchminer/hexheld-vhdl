@@ -29,6 +29,10 @@ begin
 		variable addr_int: integer range 0 to 16777215;
 	begin
 		if rising_edge(CLK) then
+			-- Needed for every I/O device to make sure the data bus isn't being driven again
+			D_i <= (others => 'Z');
+			
+			-- Prevent errors when the bus is in the high-impedance state
 			if A(0) /= 'Z' and A(1) /= 'Z' then
 				if WORD_n = '0' then
 					addr_int := to_integer(unsigned(A and x"FFFFFE"));
@@ -57,15 +61,10 @@ begin
 								D_i <= x"00" & hram(addr_int - 16774144)(15 downto 8);
 							end if;
 						end if;
-					else
-						D_i <= (others => 'Z');
 					end if;
-				else
-					D_i <= (others => 'Z');
 				end if;
 			else
 				addr_int := 0;
-				D_i <= (others => 'Z');
 			end if;
 		end if;
 	end process;

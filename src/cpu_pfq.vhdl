@@ -38,6 +38,7 @@ architecture rtl of hivecraft_cpu_pfq is
 	signal word4: std_logic_vector(15 downto 0);
 	signal ready_n: std_logic_vector(0 to 4);
 begin
+	-- Output ports that need to be readable
 	word_ready_n <= word_ready_n_s;
 	read_n <= read_n_s;
 	
@@ -61,7 +62,7 @@ begin
 			ready_n <= "11111";
 			addr_s <= x"FFCFF0";
 		elsif rising_edge(CLK) then
-			-- push each word one step further in the queue
+			-- Push each word one step further in the queue
 			if empty_n = '1' and branch_n = '1' then
 				if (WAIT_n = '1' and hold_n = '1') or word_ready_n_s = '1' then
 					data_o <= word4;
@@ -89,7 +90,7 @@ begin
 					ready_n(0) <= '1';
 				end if;
 			end if;
-			-- latch a new word from the data bus if possible
+			-- Latch a new word from the data bus if possible
 			if branch_n = '1' and WAIT_n = '1' and ready_n(0) = '1' then
 				word0 <= data_i;
 				ready_n(0) <= '0';
@@ -101,7 +102,7 @@ begin
 				word_n <= '1';
 				read_n_s <= '1';
 			elsif WAIT_n = '1' then
-				-- assert RD_n if a new word is needed...
+				-- Assert RD_n if a new word is needed...
 				if ready_n(0) = '1' and read_n_s = '1' then
 					read_n_s <= '0';
 					word_n <= '0';
@@ -113,7 +114,7 @@ begin
 					word_n <= '1';
 				end if;
 				
-				-- increment the target address if currently reading
+				-- Increment the target address if currently reading
 				if read_n_s = '0' then
 					addr_s <= std_logic_vector(unsigned(addr_s) + 2);
 				end if;

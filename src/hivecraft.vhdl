@@ -6,6 +6,7 @@ use ieee.numeric_std.all;
 
 entity hivecraft is
 	generic (
+		-- HiveCraft's version
 		HCVER: std_logic_vector(7 downto 0) := x"01"
 	);
 	port (
@@ -76,8 +77,6 @@ architecture rtl of hivecraft is
 	-- Bus latches
 	signal A_s: std_logic_vector(23 downto 0) := x"000000";
 	signal A_s_s: std_logic_vector(23 downto 0) := x"000000";
-	signal D_i_s: std_logic_vector(7 downto 0) := "ZZZZZZZZ";
-	signal D_o_s: std_logic_vector(7 downto 0) := "ZZZZZZZZ";
 	signal RD_n_s: std_logic := '1';
 	signal WR_n_s: std_logic := '1';
 	signal CS1_n_s: std_logic := '1';
@@ -91,8 +90,8 @@ architecture rtl of hivecraft is
 	signal upper_byte_n: std_logic := '1';
 	signal upper_byte_n_s: std_logic := '1';
 	signal word_n: std_logic := '1';
-	signal D_i_s_s: std_logic_vector(15 downto 0) := x"0000";
-	signal D_o_s_s: std_logic_vector(15 downto 0) := x"0000";
+	signal D_i_s: std_logic_vector(15 downto 0) := x"0000";
+	signal D_o_s: std_logic_vector(15 downto 0) := x"0000";
 	
 	-- Bus master wait signal (either CPU, DMA1, or DMA2)
 	signal bus_wait_n: std_logic := '1';
@@ -113,8 +112,6 @@ architecture rtl of hivecraft is
 	signal cs1_wait: std_logic_vector(2 downto 0) := "000";
 	signal cs2_wait: std_logic_vector(2 downto 0) := "000";
 	
-	signal wait_counter: std_logic_vector(2 downto 0) := "000";
-	
 	-- CPU's HALT signal (used for clock switching)
 	signal cpu_HALT_n: std_logic := '1';
 	
@@ -128,8 +125,8 @@ begin
 		CLK_BUS => CLK_BUS_s,
 		CDIV => cdiv,
 		A => A_s,
-		D_i => D_i_s_s,
-		D_o => D_o_s_s,
+		D_i => D_i_s,
+		D_o => D_o_s,
 		RESET_n => RESET_n,
 		RD_n => RD_n_s,
 		WR_n => WR_n_s,
@@ -140,8 +137,8 @@ begin
 	ram: entity work.hivecraft_ram(rtl) port map (
 		CLK => CLK_BUS_s,
 		A => A_s,
-		D_i => D_i_s_s,
-		D_o => D_o_s_s,
+		D_i => D_i_s,
+		D_o => D_o_s,
 		RD_n => RD_n_s,
 		WR_n => WR_n_s,
 		WORD_n => word_n
@@ -153,8 +150,8 @@ begin
 		IRQ_n => "0000000",
 		--IACK_n => '1',
 		A => A_s_s,
-		D_i => D_i_s_s,
-		D_o => D_o_s_s,
+		D_i => D_i_s,
+		D_o => D_o_s,
 		RESET_n => RESET_n,
 		RD_n => RD_n_s,
 		WR_n => WR_n_s,
@@ -165,21 +162,22 @@ begin
 		HALT_n => cpu_HALT_n
 	);
 	
-	process (rom_waiting_n, cs1_waiting_n, cs2_waiting_n, ROMSEL_n_s, CS1_n_s, CS2_n_s, rom_wait, cs1_wait, cs2_wait)
-	begin
-		wait_n <= rom_waiting_n and cs1_waiting_n and cs2_waiting_n;
-		
-		if ROMSEL_n_s = '0' then
-			wait_counter <= rom_wait;
-		elsif CS1_n_s = '0' then
-			wait_counter <= cs1_wait;
-		elsif CS2_n_s = '0' then
-			wait_counter <= cs2_wait;
-		else
-			wait_counter <= "000";
-		end if;
-	end process;
+	-- Assert wait_n if we're waiting on an external access
+	wait_n <= rom_waiting_n and cs1_waiting_n and cs2_waiting_n;
 	
+	-- Output ports that need to be readable
+	CLK_BUS <= CLK_BUS_s;
+	
+	IR_T <= IR_T_s;
+	
+	CS1_n <= CS1_n_s;
+	CS2_n <= CS2_n_s;
+	ROMSEL_n <= ROMSEL_n_s;
+	
+	RD_n <= RD_n_s;
+	WR_n <= WR_n_s;
+	
+	-- Set bus_wait_n if the HiveCraft is either waiting on an access, or has only fetched one byte of a two-byte access
 	process (RESET_n, wait_n, word_n, upper_byte_n_s, RD_n_s, WR_n_s)
 	begin
 		if RESET_n = '0' then
@@ -189,12 +187,7 @@ begin
 		end if;
 	end process;
 	
-	IR_T <= IR_T_s;
-	
-	CS1_n <= CS1_n_s;
-	CS2_n <= CS2_n_s;
-	ROMSEL_n <= ROMSEL_n_s;
-	
+	-- Set the chip selects according to the address bus's contents
 	process (A_s, RD_n_s, WR_n_s)
 		variable addr_int: integer range 0 to 16777215;
 	begin
@@ -208,6 +201,7 @@ begin
 		ROMSEL_n_s <= '1';
 		internal_n <= '1';
 		
+		-- Prevent errors when the bus is in the high-impedance state
 		if A_s(0) /= 'Z' and A_s(1) /= 'Z' then
 			addr_int := to_integer(unsigned(A_s));
 			
@@ -220,13 +214,12 @@ begin
 				when 16773760 to 16773887 => PPUSEL_n <= '0';
 				when others => internal_n <= '0';
 			end case;
+			
+			A <= A_s;
 		end if;
-		
-		A <= A_s;
-		RD_n <= RD_n_s;
-		WR_n <= WR_n_s;
 	end process;
 	
+	-- Drive the address bus only if we're making an access -- its contents technically shouldn't matter during this time though
 	process (A_s_s, RD_n_s, WR_n_s)
 	begin
 		if RD_n_s = '0' or WR_n_s = '0' then
@@ -236,10 +229,8 @@ begin
 		end if;
 	end process;
 	
-	process (CLK_BUS_s, RESET_n)
+	process (CLK_BUS_s, RESET_n, rom_wait_s, cs1_wait_s, cs2_wait_s)
 	begin
-		CLK_BUS <= CLK_BUS_s;
-		
 		if RESET_n = '0' then
 			upper_byte_n <= '1';
 			rom_waiting_n <= '1';
@@ -250,52 +241,56 @@ begin
 			cs1_wait <= cs1_wait_s;
 			cs2_wait <= cs2_wait_s;
 			
-			D_i_s_s <= x"0000";
-			D_o_s_s <= (others => 'Z');
+			D_i_s <= x"0000";
+			D_o_s <= (others => 'Z');
 		elsif rising_edge(CLK_BUS_s) then
 			upper_byte_n_s <= upper_byte_n;
 			
+			-- Miscellaneous HiveCraft I/O registers
 			if A_s = x"FFF330" then
 				-- BUS_CTL (low)
 				if RD_n_s = '0' then
 					if word_n = '0' then
-						D_i_s_s(15 downto 8) <= x"00";
+						D_i_s(15 downto 8) <= x"00";
 					else
-						D_i_s_s(15 downto 8) <= "00000" & cs2_wait_s;
+						D_i_s(15 downto 8) <= "00000" & cs2_wait_s;
 					end if;
-					D_i_s_s(7 downto 0) <= "0" & cs1_wait_s & "0" & rom_wait_s;
+					D_i_s(7 downto 0) <= "0" & cs1_wait_s & "0" & rom_wait_s;
 				elsif WR_n_s = '0' then
 					if word_n = '0' then
-						cs2_wait_s <= D_o_s_s(10 downto 8);
-						cs2_wait <= D_o_s_s(10 downto 8);
+						cs2_wait_s <= D_o_s(10 downto 8);
+						cs2_wait <= D_o_s(10 downto 8);
 					end if;
-					cs1_wait_s <= D_o_s_s(6 downto 4);
-					cs1_wait <= D_o_s_s(6 downto 4);
-					rom_wait_s <= D_o_s_s(2 downto 0);
-					rom_wait <= D_o_s_s(2 downto 0);
+					cs1_wait_s <= D_o_s(6 downto 4);
+					cs1_wait <= D_o_s(6 downto 4);
+					rom_wait_s <= D_o_s(2 downto 0);
+					rom_wait <= D_o_s(2 downto 0);
 				end if;
 			elsif A_s = x"FFF331" then
 				-- BUS_CTL (high)
 				if RD_n_s = '0' then
-					D_i_s_s <= "0000000000000" & cs2_wait_s;
+					D_i_s <= "0000000000000" & cs2_wait_s;
 				elsif WR_n_s = '0' then
-					cs2_wait_s <= D_o_s_s(2 downto 0);
+					cs2_wait_s <= D_o_s(2 downto 0);
 				end if;
 			elsif A_s = x"FFF332" then
 				-- IR_CTL
 				if RD_n_s = '0' then
-					D_i_s_s <= x"00" & (IR_R and ir_enable) & "00000" & ir_enable & IR_T_s;
+					D_i_s <= x"00" & (IR_R and ir_enable) & "00000" & ir_enable & IR_T_s;
 				elsif WR_n_s = '0' then
-					ir_enable <= D_o_s_s(1);
-					IR_T_s <= D_o_s_s(0);
+					ir_enable <= D_o_s(1);
+					IR_T_s <= D_o_s(0);
 				end if;
 			elsif A_s = x"FFF334" and RD_n_s = '0' then
 				-- CONSBTN
-				D_i_s_s <= "0000000000" & BTN_n;
+				D_i_s <= "0000000000" & BTN_n;
 			elsif A_s = x"FFF33F" and RD_n_s = '0' then
 				-- HCVER
-				D_i_s_s <= x"00" & HCVER;
-			elsif ROMSEL_n_s = '0' then
+				D_i_s <= x"00" & HCVER;
+			end if;
+			
+			-- If the HiveCraft is waiting on a cartridge access, tick the corresponding wait state counter down
+			if ROMSEL_n_s = '0' then
 				if rom_wait = "000" then
 					rom_wait <= rom_wait_s;
 					rom_waiting_n <= '1';
@@ -319,64 +314,53 @@ begin
 					cs2_wait <= std_logic_vector(unsigned(cs2_wait) - 1);
 					cs2_waiting_n <= '0';
 				end if;
-			else
-				D_i_s_s <= (others => 'Z');
-			end if;
-			
-			if WR_n_s = '0' and internal_n = '1' then
-				D <= D_o_s;
-				D_i_s <= x"00";
-			else
-				D <= (others => 'Z');
+			elsif internal_n = '0' then
+				-- Needed for every I/O device to make sure the data bus isn't being driven again
+				D_i_s <= (others => 'Z');
 			end if;
 		elsif falling_edge(CLK_BUS_s) then
 			upper_byte_n_s <= upper_byte_n;
 			
-			if wait_n = '1' then
-				if internal_n = '1' then
-					if RD_n_s = '0' then
-						if upper_byte_n = '1' then
-							if word_n = '0' then
-								upper_byte_n <= '0';
-								A_s(0) <= '1';
-							else
-								A_s(0) <= A_s_s(0);
-							end if;
-						else
-							upper_byte_n <= '1';
-							A_s(0) <= '0';
-						end if;
-					elsif WR_n_s = '0' then
-						if upper_byte_n = '1' then
-							D_o_s <= D_o_s_s(7 downto 0);
-							if word_n = '0' then
-								upper_byte_n <= '0';
-								A_s(0) <= '1';
-							else
-								A_s(0) <= A_s_s(0);
-							end if;
-						else
-							D_o_s <= D_o_s_s(15 downto 8);
-							upper_byte_n <= '1';
-							A_s(0) <= '0';
-						end if;
-					end if;
-				end if;
-			end if;
-			
+			-- Handle external 16-bit accesses by turning them into 8-bit accesses
 			if wait_n = '1' and internal_n = '1' then
 				if RD_n_s = '0' then
-					D_i_s <= D;
+					-- 16-bit reads: low byte from A_s_s, high byte from A_s_s + 1
 					if upper_byte_n = '1' then
-						D_i_s_s(7 downto 0) <= D;
-						D_i_s_s(15 downto 8) <= x"00";
+						D_i_s(7 downto 0) <= D;
+						D_i_s(15 downto 8) <= x"00";
+						if word_n = '0' then
+							upper_byte_n <= '0';
+							A_s(0) <= '1';
+						else
+							A_s(0) <= A_s_s(0);
+						end if;
 					else
-						D_i_s_s(15 downto 8) <= D;
+						D_i_s(15 downto 8) <= D;
+						upper_byte_n <= '1';
+						A_s(0) <= '0';
 					end if;
-				else
-					D_i_s_s <= (others => 'Z');
+				elsif WR_n_s = '0' then
+					-- 16-bit writes: low byte to A_s_s, high byte to A_s_s + 1
+					if upper_byte_n = '1' then
+						D <= D_o_s(7 downto 0);
+						if word_n = '0' then
+							upper_byte_n <= '0';
+							A_s(0) <= '1';
+						else
+							A_s(0) <= A_s_s(0);
+						end if;
+					else
+						D <= D_o_s(15 downto 8);
+						upper_byte_n <= '1';
+						A_s(0) <= '0';
+					end if;
 				end if;
-			else
+				
+				-- Drive the bidirectional data bus only if the HiveCraft is in the process of doing an external write
+				if WR_n_s = '1' then
+					D <= (others => 'Z');
+				end if;
+			elsif WR_n_s = '1' then
 				D <= (others => 'Z');
 			end if;
 		end if;

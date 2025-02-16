@@ -2,7 +2,6 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
 
 entity hivecraft_cpu is
 	port (
@@ -34,7 +33,6 @@ end hivecraft_cpu;
 architecture rtl of hivecraft_cpu is
 	-- Bus latches
 	signal A_s: std_logic_vector(23 downto 0) := x"FFCFF0";
-	signal D_i_s: std_logic_vector(15 downto 0);
 	signal D_o_s: std_logic_vector(15 downto 0);
 	signal RD_n_s: std_logic := '1';
 	signal WR_n_s: std_logic := '1';
@@ -53,7 +51,7 @@ begin
 		CLK => CLK,
 		addr_i => dcd_branch_addr,
 		addr_o => pfq_addr,
-		data_i => D_i_s,
+		data_i => D_i,
 		data_o => D_o_s,
 		RESET_n => RESET_n,
 		WAIT_n => WAIT_n,
@@ -69,7 +67,6 @@ begin
 	WORD_n <= WORD_n_s;
 	
 	A <= A_s;
-	D_i_s <= D_i;
 	
 	process (RESET_n, pfq_read_n, pfq_word_n, pfq_addr)
 	begin
