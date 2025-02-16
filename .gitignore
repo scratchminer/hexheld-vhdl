@@ -1,0 +1,8 @@
+# macOS junk
+.DS_Store
+
+# simulation test files
+*.o
+*.cf
+*.vcd
+cpu_tb
