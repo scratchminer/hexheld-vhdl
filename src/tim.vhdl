@@ -61,10 +61,6 @@ architecture rtl of hivecraft_tim is
 	signal tim_a: std_logic_vector(15 downto 0) := x"FFFF";
 	signal tim_b: std_logic_vector(15 downto 0) := x"FFFF";
 begin
-	-- Set the timer's reload port if it's enabled and the counter is overflowing
-	TA_RELOAD_n_s <= '1' when ((tim_a_enable = '1') nand (tim_a = tim_a_s)) else '0';
-	TB_RELOAD_n <= '1' when ((tim_b_enable = '1') nand (tim_b = tim_b_s)) else '0';
-	
 	-- Output port that needs to be readable
 	TA_RELOAD_n <= TA_RELOAD_n_s;
 	
@@ -101,17 +97,22 @@ begin
 		if RESET_n = '0' then
 			tim_a <= x"FFFF";
 			tim_a_enable <= '0';
+			TA_RELOAD_n_s <= '1';
 		elsif rising_edge(tim_a_clk) then
 			tim_a_enable <= tim_a_enable_s;
 			if tim_a_enable = '1' then
 				if tim_a = x"FFFF" then
 					tim_a <= tim_a_s;
+					TA_RELOAD_n_s <= '0';
 					if tim_a_oneshot = '1' then
 						tim_a_enable <= '0';
 					end if;
 				else
+					TA_RELOAD_n_s <= '1';
 					tim_a <= std_logic_vector(unsigned(tim_a) + 1);
 				end if;
+			else
+				TA_RELOAD_n_s <= '1';
 			end if;
 		end if;
 	end process;
@@ -122,17 +123,22 @@ begin
 		if RESET_n = '0' then
 			tim_b <= x"FFFF";
 			tim_b_enable <= '0';
+			TB_RELOAD_n <= '1';
 		elsif rising_edge(tim_b_clk) then
 			tim_b_enable <= tim_b_enable_s;
 			if tim_b_enable = '1' then
 				if tim_b = x"FFFF" then
 					tim_b <= tim_b_s;
+					TB_RELOAD_n <= '0';
 					if tim_b_oneshot = '1' then
 						tim_b_enable <= '0';
 					end if;
 				else
+					TB_RELOAD_n <= '1';
 					tim_b <= std_logic_vector(unsigned(tim_b) + 1);
 				end if;
+			else
+				TB_RELOAD_n <= '1';
 			end if;
 		end if;
 	end process;
