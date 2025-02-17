@@ -45,6 +45,10 @@ architecture rtl of hivecraft_tim is
 	signal tim_b_oneshot: std_logic := '0';
 	signal tim_b_src: std_logic_vector(4 downto 0) := "00000";
 	
+	-- Enable latches (applied at the next timer clock)
+	signal tim_a_enable_s: std_logic := '0';
+	signal tim_b_enable_s: std_logic := '0';
+	
 	-- Multiplexed timer clock signals
 	signal tim_a_clk: std_logic := '0';
 	signal tim_b_clk: std_logic := '0';
@@ -54,8 +58,8 @@ architecture rtl of hivecraft_tim is
 	signal tim_b_s: std_logic_vector(15 downto 0) := x"0000";
 	
 	-- Timer counters
-	signal tim_a: std_logic_vector(15 downto 0) := x"0000";
-	signal tim_b: std_logic_vector(15 downto 0) := x"0000";
+	signal tim_a: std_logic_vector(15 downto 0) := x"FFFF";
+	signal tim_b: std_logic_vector(15 downto 0) := x"FFFF";
 begin
 	-- Set the timer's reload port if it's enabled and the counter is overflowing
 	TA_RELOAD_n_s <= '1' when ((tim_a_enable = '1') nand (tim_a = tim_a_s)) else '0';
@@ -95,12 +99,19 @@ begin
 	process (tim_a_clk, RESET_n)
 	begin
 		if RESET_n = '0' then
-			tim_a <= x"0000";
-		elsif rising_edge(tim_a_clk) and tim_a_enable = '1' then
-			if tim_a = tim_a_s then
-				tim_a <= x"0000";
-			else
-				tim_a <= std_logic_vector(unsigned(tim_a) + 1);
+			tim_a <= x"FFFF";
+			tim_a_enable <= '0';
+		elsif rising_edge(tim_a_clk) then
+			tim_a_enable <= tim_a_enable_s;
+			if tim_a_enable = '1' then
+				if tim_a = x"FFFF" then
+					tim_a <= tim_a_s;
+					if tim_a_oneshot = '1' then
+						tim_a_enable <= '0';
+					end if;
+				else
+					tim_a <= std_logic_vector(unsigned(tim_a) + 1);
+				end if;
 			end if;
 		end if;
 	end process;
@@ -109,12 +120,19 @@ begin
 	process (tim_b_clk, RESET_n)
 	begin
 		if RESET_n = '0' then
-			tim_b <= x"0000";
-		elsif rising_edge(tim_b_clk) and tim_b_enable = '1' then
-			if tim_b = tim_b_s then
-				tim_b <= x"0000";
-			else
-				tim_b <= std_logic_vector(unsigned(tim_b) + 1);
+			tim_b <= x"FFFF";
+			tim_b_enable <= '0';
+		elsif rising_edge(tim_b_clk) then
+			tim_b_enable <= tim_b_enable_s;
+			if tim_b_enable = '1' then
+				if tim_b = x"FFFF" then
+					tim_b <= tim_b_s;
+					if tim_b_oneshot = '1' then
+						tim_b_enable <= '0';
+					end if;
+				else
+					tim_b <= std_logic_vector(unsigned(tim_b) + 1);
+				end if;
 			end if;
 		end if;
 	end process;
@@ -122,11 +140,11 @@ begin
 	process (CLK_BUS, RESET_n)
 	begin
 		if RESET_n = '0' then
-			tim_a_enable <= '0';
+			tim_a_enable_s <= '0';
 			tim_a_oneshot <= '0';
 			tim_a_src <= "00000";
 			
-			tim_b_enable <= '0';
+			tim_b_enable_s <= '0';
 			tim_b_oneshot <= '0';
 			tim_b_src <= "00000";
 			
@@ -143,12 +161,12 @@ begin
 					if WORD_n = '1' then
 						D_i(15 downto 8) <= x"00";
 					else
-						D_i(15 downto 8) <= tim_b_enable & '0' & tim_b_oneshot & tim_b_src;
+						D_i(15 downto 8) <= tim_b_enable_s & '0' & tim_b_oneshot & tim_b_src;
 					end if;
-					D_i(7 downto 0) <= tim_a_enable & '0' & tim_a_oneshot & tim_a_src;
+					D_i(7 downto 0) <= tim_a_enable_s & '0' & tim_a_oneshot & tim_a_src;
 				elsif A = x"FFF301" then
 					-- TB_CTL
-					D_i <= x"00" & tim_b_enable & '0' & tim_b_oneshot & tim_b_src;
+					D_i <= x"00" & tim_b_enable_s & '0' & tim_b_oneshot & tim_b_src;
 				elsif A = x"FFF302" then
 					-- TA_C (low)
 					if WORD_n = '1' then
@@ -198,16 +216,16 @@ begin
 				if A = x"FFF300" then
 					-- TA_CTL
 					if WORD_n = '0' then
-						tim_b_enable <= D_o(15);
+						tim_b_enable_s <= D_o(15);
 						tim_b_oneshot <= D_o(13);
 						tim_b_src <= D_o(12 downto 8);
 					end if;
-					tim_a_enable <= D_o(7);
+					tim_a_enable_s <= D_o(7);
 					tim_a_oneshot <= D_o(5);
 					tim_a_src <= D_o(4 downto 0);
 				elsif A = x"FFF301" then
 					-- TB_CTL
-					tim_b_enable <= D_o(7);
+					tim_b_enable_s <= D_o(7);
 					tim_b_oneshot <= D_o(5);
 					tim_b_src <= D_o(4 downto 0);
 				elsif A = x"FFF302" then
