@@ -15,7 +15,14 @@ fi
 
 for arg in "$@"; do
 	if ! { [ "$arg" = "-c" ] || [ "$arg" = "--clean" ]; } && [ -f "test/$arg.vhdl" ]; then
-		ghdl -a -Wall src/cpu_pfq.vhdl src/cpu.vhdl src/ram.vhdl src/clk.vhdl src/hivecraft.vhdl "test/$arg.vhdl" && \
+		ghdl -a -Wall \
+			src/cpu_pfq.vhdl \
+			src/cpu.vhdl \
+			src/clk.vhdl \
+			src/ram.vhdl \
+			src/tim.vhdl \
+			src/hivecraft.vhdl \
+		"test/$arg.vhdl" && \
 		ghdl -e "$arg" && \
 		ghdl -r "$arg" --vcd="$arg.vcd"
 	elif [ "$arg" != "-c" ] && [ "$arg" != "--clean" ]; then

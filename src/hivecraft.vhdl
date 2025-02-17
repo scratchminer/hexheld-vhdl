@@ -50,10 +50,11 @@ entity hivecraft is
 		CON_CLK: out std_logic;
 		CON_LATCH: out std_logic;
 		
-		-- Analog-to-digital converter
+		-- Analog-to-digital converter (through a transmission gate, RC filter and Schmitt-trigger inverter)
+		AD_IN_n: in std_logic_vector(3 downto 0);
+		AD_SAMP_n: out std_logic_vector(3 downto 0);
 		
-		
-		-- Audio output (PWM at 16 MHz)
+		-- Audio output (PWM at 16 MHz, through a low-pass filter)
 		AOUT_L: out std_logic;
 		AOUT_R: out std_logic;
 		
@@ -72,7 +73,7 @@ architecture rtl of hivecraft is
 	signal CLK_BUS_s: std_logic := '0';
 	
 	-- Master clock divider
-	signal cdiv: std_logic_vector(15 downto 0);
+	signal sysdiv: std_logic_vector(15 downto 0);
 	
 	-- Bus latches
 	signal A_s: std_logic_vector(23 downto 0) := x"000000";
@@ -123,7 +124,7 @@ begin
 		CLK_OSC => CLK_OSC,
 		CLK_SUB => CLK_SUB,
 		CLK_BUS => CLK_BUS_s,
-		CDIV => cdiv,
+		CDIV => sysdiv,
 		A => A_s,
 		D_i => D_i_s,
 		D_o => D_o_s,
@@ -142,6 +143,22 @@ begin
 		RD_n => RD_n_s,
 		WR_n => WR_n_s,
 		WORD_n => word_n
+	);
+	
+	tim: entity work.hivecraft_tim(rtl) port map (
+		SYSDIV => sysdiv,
+		CLK_SUB => CLK_SUB,
+		EXT_n => EXT_n,
+		CLK_BUS => CLK_BUS_s,
+		A => A_s,
+		D_i => D_i_s,
+		D_o => D_o_s,
+		RESET_n => RESET_n,
+		RD_n => RD_n_s,
+		WR_n => WR_n_s,
+		WORD_n => word_n --,
+		-- TA_RELOAD_n => '1',
+		-- TB_RELOAD_n => '1'
 	);
 	
 	cpu: entity work.hivecraft_cpu(rtl) port map (
@@ -188,7 +205,7 @@ begin
 	end process;
 	
 	-- Set the chip selects according to the address bus's contents
-	process (A_s, RD_n_s, WR_n_s)
+	process (A_s)
 		variable addr_int: integer range 0 to 16777215;
 	begin
 		addr_int := 0;
@@ -214,9 +231,9 @@ begin
 				when 16773760 to 16773887 => PPUSEL_n <= '0';
 				when others => internal_n <= '0';
 			end case;
-			
-			A <= A_s;
 		end if;
+		
+		A <= A_s;
 	end process;
 	
 	-- Drive the address bus only if we're making an access -- its contents technically shouldn't matter during this time though

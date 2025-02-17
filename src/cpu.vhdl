@@ -43,6 +43,7 @@ architecture rtl of hivecraft_cpu is
 	signal pfq_word_n: std_logic := '1';
 	signal pfq_word_ready_n: std_logic := '1';
 	signal pfq_addr: std_logic_vector(23 downto 0);
+	signal pfq_data_o: std_logic_vector(15 downto 0);
 	
 	signal dcd_branch_n: std_logic := '0';
 	signal dcd_branch_addr: std_logic_vector(23 downto 0);
@@ -52,7 +53,7 @@ begin
 		addr_i => dcd_branch_addr,
 		addr_o => pfq_addr,
 		data_i => D_i,
-		data_o => D_o_s,
+		data_o => pfq_data_o,
 		RESET_n => RESET_n,
 		WAIT_n => WAIT_n,
 		read_n => pfq_read_n,

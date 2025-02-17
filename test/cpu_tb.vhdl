@@ -56,6 +56,9 @@ begin
 		--CON_CLK => '0',
 		--CON_LATCH => '0',
 		
+		AD_IN_n => "1111",
+		-- AD_SAMP_n => "1111",
+		
 		--AOUT_L => '0',
 		--AOUT_R => '0',
 		

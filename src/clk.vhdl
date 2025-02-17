@@ -43,7 +43,8 @@ architecture rtl of hivecraft_clk is
 	signal speed: std_logic_vector(1 downto 0) := "00";
 	signal enable: std_logic := '1';
 begin
-	-- Output port that needs to be readable
+	-- Output ports that need to be readable
+	CDIV <= CDIV_s;
 	CLK_BUS <= CLK_BUS_s;
 	
 	-- Divide the 32 kHz oscillator by 2 for the last clock speed setting
@@ -61,8 +62,8 @@ begin
 	begin
 		if RESET_n = '0' then
 			CLK_BUS_s <= '0';
+			CDIV_s <= x"0000";
 		elsif rising_edge(CLK_OSC) and enable = '1' then
-			CDIV <= std_logic_vector(unsigned(CDIV_s) + 1);
 			CDIV_s <= std_logic_vector(unsigned(CDIV_s) + 1);
 			
 			case speed is
@@ -77,7 +78,6 @@ begin
 	process (CLK_BUS_s, RESET_n)
 	begin
 		if RESET_n = '0' then
-			CDIV_s <= x"0000";
 			speed <= "00";
 			speed_s <= "00";
 			enable <= '1';
