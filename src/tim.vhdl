@@ -32,9 +32,6 @@ entity hivecraft_tim is
 end hivecraft_tim;
 
 architecture rtl of hivecraft_tim is
-	-- Timer A reload signal
-	signal TA_RELOAD_n_s: std_logic := '1';
-	
 	-- Timer A control
 	signal tim_a_enable: std_logic := '0';
 	signal tim_a_oneshot: std_logic := '0';
@@ -58,11 +55,12 @@ architecture rtl of hivecraft_tim is
 	signal tim_b_s: std_logic_vector(15 downto 0) := x"0000";
 	
 	-- Timer counters
-	signal tim_a: std_logic_vector(15 downto 0) := x"FFFF";
-	signal tim_b: std_logic_vector(15 downto 0) := x"FFFF";
+	signal tim_a: std_logic_vector(16 downto 0) := (others => '0');
+	signal tim_b: std_logic_vector(16 downto 0) := (others => '0');
 begin
-	-- Output port that needs to be readable
-	TA_RELOAD_n <= TA_RELOAD_n_s;
+	-- The 16th bit of each counter is used only for the reload signal
+	TA_RELOAD_n <= not tim_a(16);
+	TB_RELOAD_n <= not tim_b(16);
 	
 	-- Multiplex timer A's clock sources onto one signal
 	process (tim_a_src, SYSDIV, CLK_SUB, EXT_n)
@@ -78,7 +76,7 @@ begin
 	end process;
 	
 	-- Multiplex timer B's clock sources onto one signal
-	process (tim_b_src, SYSDIV, CLK_SUB, EXT_n, TA_RELOAD_n_s)
+	process (tim_b_src, SYSDIV, CLK_SUB, EXT_n, tim_a)
 		variable src_int: integer range 0 to 31;
 	begin
 		src_int := to_integer(unsigned(tim_b_src));
@@ -86,7 +84,7 @@ begin
 			when 0 to 15 => tim_b_clk <= SYSDIV(src_int);
 			when 16 => tim_b_clk <= CLK_SUB;
 			when 17 => tim_b_clk <= not EXT_n;
-			when 18 => tim_b_clk <= not TA_RELOAD_n_s;
+			when 18 => tim_b_clk <= not tim_a(16);
 			when others => tim_b_clk <= '0';
 		end case;
 	end process;
@@ -95,24 +93,23 @@ begin
 	process (tim_a_clk, RESET_n)
 	begin
 		if RESET_n = '0' then
-			tim_a <= x"FFFF";
+			tim_a(15 downto 0) <= x"0000";
 			tim_a_enable <= '0';
-			TA_RELOAD_n_s <= '1';
+			tim_a(16) <= '0';
 		elsif rising_edge(tim_a_clk) then
 			tim_a_enable <= tim_a_enable_s;
 			if tim_a_enable = '1' then
-				if tim_a = x"FFFF" then
-					tim_a <= tim_a_s;
-					TA_RELOAD_n_s <= '0';
+				if tim_a(16) = '1' then
+					tim_a(15 downto 0) <= tim_a_s;
+					tim_a(16) <= '0';
 					if tim_a_oneshot = '1' then
 						tim_a_enable <= '0';
 					end if;
 				else
-					TA_RELOAD_n_s <= '1';
 					tim_a <= std_logic_vector(unsigned(tim_a) + 1);
 				end if;
 			else
-				TA_RELOAD_n_s <= '1';
+				tim_a(16) <= '0';
 			end if;
 		end if;
 	end process;
@@ -121,24 +118,23 @@ begin
 	process (tim_b_clk, RESET_n)
 	begin
 		if RESET_n = '0' then
-			tim_b <= x"FFFF";
+			tim_b(15 downto 0) <= x"0000";
 			tim_b_enable <= '0';
-			TB_RELOAD_n <= '1';
+			tim_b(16) <= '0';
 		elsif rising_edge(tim_b_clk) then
 			tim_b_enable <= tim_b_enable_s;
 			if tim_b_enable = '1' then
-				if tim_b = x"FFFF" then
-					tim_b <= tim_b_s;
-					TB_RELOAD_n <= '0';
+				if tim_b(16) = '1' then
+					tim_b(15 downto 0) <= tim_b_s;
+					tim_b(16) <= '0';
 					if tim_b_oneshot = '1' then
 						tim_b_enable <= '0';
 					end if;
 				else
-					TB_RELOAD_n <= '1';
 					tim_b <= std_logic_vector(unsigned(tim_b) + 1);
 				end if;
 			else
-				TB_RELOAD_n <= '1';
+				tim_b(16) <= '0';
 			end if;
 		end if;
 	end process;

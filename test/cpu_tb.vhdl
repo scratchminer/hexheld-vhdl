@@ -62,6 +62,9 @@ begin
 		--AOUT_L => '0',
 		--AOUT_R => '0',
 		
+		--XAEN_L_n => '1',
+		--XAEN_R_n => '1',
+		
 		IR_R => '0',
 		--IR_T => '0',
 		

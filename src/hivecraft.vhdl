@@ -50,13 +50,17 @@ entity hivecraft is
 		CON_CLK: out std_logic;
 		CON_LATCH: out std_logic;
 		
-		-- Analog-to-digital converter (through a transmission gate, RC filter and Schmitt-trigger inverter)
+		-- Analog-to-digital converter (from a transmission gate, RC filter and Schmitt-trigger inverter)
 		AD_IN_n: in std_logic_vector(3 downto 0);
 		AD_SAMP_n: out std_logic_vector(3 downto 0);
 		
-		-- Audio output (PWM at 16 MHz, through a low-pass filter)
+		-- Audio output (PWM at 16 MHz, to a low-pass filter)
 		AOUT_L: out std_logic;
 		AOUT_R: out std_logic;
+		
+		-- Expansion audio enable (to mixer)
+		XAEN_L_n: out std_logic;
+		XAEN_R_n: out std_logic;
 		
 		-- Infrared port
 		IR_R: in std_logic;
