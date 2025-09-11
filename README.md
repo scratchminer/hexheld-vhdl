@@ -8,9 +8,6 @@ My first time using VHDL and hardware programming in general.
 
 The `sim.sh` script uses [GHDL](https://ghdl.github.io/ghdl/) for simulation.
 
-Note that on Apple Silicon Macs, the GHDL Homebrew package is broken.
-More information can be found [here](https://github.com/ghdl/ghdl/issues/2708).
-
 1. Install GHDL from your favorite package manager.
 2. Run the `sim.sh` shell script, passing in the name of the testbench you want to run. (Example: `./sim.sh cpu_tb`)
 

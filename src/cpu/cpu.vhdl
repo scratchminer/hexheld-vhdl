@@ -3,6 +3,9 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
+library work;
+use work.hivecraft_cpu_pack.all;
+
 entity hivecraft_cpu is
 	port (
 		-- Clock
