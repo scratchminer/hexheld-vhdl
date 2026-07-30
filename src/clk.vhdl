@@ -48,7 +48,7 @@ begin
 	CLK_BUS <= CLK_BUS_s;
 	
 	-- Divide the 32 kHz oscillator by 2 for the last clock speed setting
-	process (CLK_SUB, RESET_n)
+	process (CLK_SUB, RESET_n) is
 	begin
 		if RESET_n = '0' then
 			sub_divider <= '0';
@@ -58,7 +58,7 @@ begin
 	end process;
 	
 	-- Clock the divider only if the main oscillator is enabled, and multiplex CLK_BUS_s from one of four clock outputs
-	process (CLK_OSC, RESET_n)
+	process (CLK_OSC, RESET_n) is
 	begin
 		if RESET_n = '0' then
 			CLK_BUS_s <= '0';
@@ -75,7 +75,7 @@ begin
 		end if;
 	end process;
 	
-	process (CLK_BUS_s, RESET_n)
+	process (CLK_BUS_s, RESET_n) is
 	begin
 		if RESET_n = '0' then
 			speed <= "00";

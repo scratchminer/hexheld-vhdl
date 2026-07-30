@@ -4,80 +4,66 @@ library ieee;
 use ieee.std_logic_1164.all;
 
 package hivecraft_cpu_pack is
-	type cpu_alu_data_size_t is (SIZE_BYTE, SIZE_WORD, SIZE_POINTER);
+	type cpu_alu_data_size_t is (ALU_SIZE_BYTE, ALU_SIZE_WORD, ALU_SIZE_POINTER);
 	type cpu_alu_data_location_t is (
 		-- Zero
-		DATA_ZERO,
-		-- Current ALU destination size
-		DATA_SIZE,
-		-- 8, 16, or 24, depending on the current ALU destination size
-		DATA_NUMBITS,
-		-- L0, W0, or P0, depending on the current ALU destination size
-		DATA_REG_R0,
+		ALU_DATA_ZERO,
+		-- Current ALU operand size
+		ALU_DATA_SIZE,
+		-- 8, 16, or 24, depending on the current ALU operand size
+		ALU_DATA_NUMBITS,
+		-- L0, W0, or P0, depending on the current ALU operand size
+		ALU_DATA_REG_R0,
 		-- Lower half flags
-		DATA_REG_F,
+		ALU_DATA_REG_F,
 		-- Upper half flags
-		DATA_REG_W,
+		ALU_DATA_REG_W,
 		-- Flags
-		DATA_REG_WF,
+		ALU_DATA_REG_WF,
 		-- Easy P7 access
-		DATA_REG_SP,
+		ALU_DATA_REG_SP,
 		-- Program counter
-		DATA_REG_PGC,
+		ALU_DATA_REG_PGC,
 		-- REPI state (REPI / MULU / MULS / DIVU / DIVS)
-		DATA_LATCH_REPI,
+		ALU_DATA_LATCH_REPI,
 		-- REPR state
-		DATA_LATCH_REPR,
+		ALU_DATA_LATCH_REPR,
 		-- Memory address register
-		DATA_LATCH_MAR,
+		ALU_DATA_LATCH_MAR,
 		-- Memory data register
-		DATA_LATCH_MDR,
+		ALU_DATA_LATCH_MDR,
 		-- Factor latch (MULU / MULS)
-		DATA_MULDIV_FACTOR,
+		ALU_DATA_LATCH_FACTOR,
 		-- Operand latch (MULU / MULS / DIVU / DIVS)
-		DATA_MULDIV_OPERAND,
+		ALU_DATA_LATCH_OPERAND,
 		-- Instruction word
-		DATA_IMMWORD_0,
+		ALU_DATA_IMMWORD_0,
 		-- Immediate word 1
-		DATA_IMMWORD_1,
+		ALU_DATA_IMMWORD_1,
 		-- Immediate word 2
-		DATA_IMMWORD_2,
+		ALU_DATA_IMMWORD_2,
 		-- Immediate HML (H = LSB of immediate word 0)
-		DATA_IMMWORD_HML,
+		ALU_DATA_IMMWORD_HML,
 		-- Immediate HML (H = LSB of immediate word 2)
-		DATA_IMMWORD_HML_RM,
-		-- Bits 2-5 of the instruction word
-		DATA_IMMWORD_SHORT_2,
-		-- Bits 8-11 of the instruction word
-		DATA_IMMWORD_SHORT_8,
-		-- Immediate word following any extra words for first RM operand
-		DATA_RM2WORD_1,
-		-- Immediate word following DATA_RM2WORD_1
-		DATA_RM2WORD_2,
-		-- Immediate HML (H = LSB of DATA_RM2WORD_2)
-		DATA_RM2WORD_HML_RM,
-		-- Register pointed to by bits 2-4 of the instruction word
-		DATA_IMMWORD_0_REG_2,
+		ALU_DATA_IMMWORD_HML_RM,
+		-- Bits 2-5 of the current RM operand in the instruction word
+		ALU_DATA_IMMWORD_SHORT_2_RM,
+		-- Register pointed to by bits 2-4 of the current RM operand in the instruction word
+		ALU_DATA_IMMWORD_0_REG_2_RM,
 		-- Register pointed to by bits 8-10 of the instruction word
-		DATA_IMMWORD_0_REG_8,
+		ALU_DATA_IMMWORD_0_REG_8,
 		-- Register pointed to by bits 2-4 of immediate word 1
-		DATA_IMMWORD_1_REG_2,
+		ALU_DATA_IMMWORD_1_REG_2,
 		-- Register pointed to by bits 8-10 of immediate word 1
-		DATA_IMMWORD_1_REG_8,
+		ALU_DATA_IMMWORD_1_REG_8,
 		-- Register pointed to by bits 8-10 of immediate word 2
-		DATA_IMMWORD_2_REG_8,
-		-- Register pointed to by bits 2-4 of DATA_RM2WORD_1
-		DATA_RM2WORD_1_REG_2,
-		-- Register pointed to by bits 8-10 of DATA_RM2WORD_1
-		DATA_RM2WORD_1_REG_8,
-		-- Register pointed to by bits 8-10 of DATA_RM2WORD_2
-		DATA_RM2WORD_2_REG_8,
+		ALU_DATA_IMMWORD_2_REG_8,
 		-- Register pointed to by the REPR state
-		DATA_REPR,
+		ALU_DATA_REPR,
 		-- Outputs from a 3-to-8 demultiplexer hooked up to bits 8-10 of the instruction word
-		DATA_DMX_IMM,
+		ALU_DATA_DMX_IMM,
 		-- Outputs from a 3-to-8 demultiplexer hooked up to bits 8-10 of the P0 register
-		DATA_DMX_P0
+		ALU_DATA_DMX_P0
 	);
 	type cpu_alu_operation_t is (ALU_ADD, ALU_AND, ALU_OR, ALU_XOR);
 	type cpu_alu_shift_operation_t is (
@@ -103,33 +89,39 @@ package hivecraft_cpu_pack is
 	type cpu_alu_aux_mode_t is (
 		-- Do not write the aux latch
 		ALU_AUX_NONE,
-		-- Clear the aux latch
-		ALU_AUX_CLEAR,
-		-- Write the ALU zero flag to the aux latch
+		-- Set the aux latch to 1
+		ALU_AUX_SET,
+		-- Use the aux latch as the ALU zero flag
 		ALU_AUX_ZERO,
-		-- Write the ALU carry flag to the aux latch
+		-- Write the ALU carry flag to the aux latch, and use the aux latch as the ALU carry in
 		ALU_AUX_CARRY
 	);
 	type cpu_alu_carry_mode_t is (
 		-- Write to the ALU carry flag normally
 		ALU_CARRY_NORMAL,
-		-- Write an inverted carry output to the ALU carry flag
-		ALU_CARRY_INVERT
+		-- Clear the ALU carry flag
+		ALU_CARRY_CLEAR,
+		-- Write the inverted carry out to the ALU carry flag
+		ALU_CARRY_INVERT,
+		-- Write the ALU shifter carry to the ALU carry flag
+		ALU_CARRY_SHIFTER
 	);
 	type cpu_alu_zero_mode_t is (
 		-- Write to the ALU zero flag normally
 		ALU_ZERO_NORMAL,
-		-- AND the current ALU zero flag with a zero flag based on the ALU result
+		-- AND the current ALU zero flag with the new one
 		ALU_ZERO_ACCUMULATE,
+		-- OR the current ALU zero flag with the new one
+		ALU_ZERO_BREAK,
 		-- Write to the ALU zero flag based on a bitwise AND of the two ALU sources
 		ALU_ZERO_TEST
 	);
 	type cpu_alu_overflow_mode_t is (
-		-- Write to the ALU overflow flag normally
+		-- Write to the ALU overflow flag normally (for ADD, overflow; for AND, OR, and XOR, parity)
 		ALU_OVERFLOW_NORMAL,
 		-- Clear the ALU overflow flag
 		ALU_OVERFLOW_CLEAR,
-		-- OR the current ALU overflow flag with an overflow flag based on the ALU result
+		-- OR the ALU overflow flag with the aux latch
 		ALU_OVERFLOW_ACCUMULATE,
 		-- Write the ALU shifter carry to the ALU overflow flag
 		ALU_OVERFLOW_CARRY
@@ -138,7 +130,7 @@ package hivecraft_cpu_pack is
 	type cpu_alu_data_src_t is record
 		size: cpu_alu_data_size_t;
 		location: cpu_alu_data_location_t;
-		sign_extend: std_logic;
+		sign_extend: boolean;
 	end record cpu_alu_data_src_t;
 	type cpu_alu_data_dst_t is record
 		size: cpu_alu_data_size_t;
@@ -174,8 +166,10 @@ package hivecraft_cpu_pack is
 		BUS_DATA_ALU_SRC2,
 		-- Write the ALU's result to MDR in the second half of the cycle
 		BUS_DATA_ALU_DEST,
+		-- Shift the existing MDR value left 8 bits, so $AABBCC becomes $BBCC00
+		BUS_DATA_SHIFT_LEFT,
 		-- Shift the existing MDR value right 16 bits, so $AABBCC becomes $0000AA
-		BUS_DATA_SHIFT
+		BUS_DATA_SHIFT_RIGHT
 	);
 	type cpu_bus_cycle_type_t is (
 		-- Ignore the data bus
@@ -231,11 +225,121 @@ package hivecraft_cpu_pack is
 	);
 	type cpu_seq_control_t is record
 		cond: cpu_seq_branch_condition_t;
-		run_next_true: ;
-		run_next_false: ;
+		run_next_true: cpu_mcd_entry_t;
+		run_next_false: cpu_mcd_entry_t;
 		halt: boolean;
-		final: boolean;
 	end record cpu_seq_control_t;
+	
+	type cpu_mcd_entry_type_t is (
+		-- No operation
+		MCD_NOP,
+		-- Request memory (@simm16)
+		MCD_MREQ_ABS_SGN_W,
+		-- Request memory (@imm24)
+		MCD_MREQ_ABS_UNS_P,
+		-- Request memory (@hml+r8)
+		MCD_MREQ_ABS_IDX_UNS_B,
+		-- Request memory (@hml+r8SX)
+		MCD_MREQ_ABS_IDX_SGN_B,
+		-- Request memory (@hml+r16)
+		MCD_MREQ_ABS_IDX_UNS_W,
+		-- Request memory (@hml+r16SX)
+		MCD_MREQ_ABS_IDX_SGN_W,
+		-- Request memory (@hml+r24)
+		MCD_MREQ_ABS_IDX_UNS_P,
+		-- Request memory (@r24)
+		MCD_MREQ_REG_IND_UNS_P,
+		-- Request memory (@r24+)
+		MCD_MREQ_REG_IND_POSTINC_UNS_P,
+		-- Request memory (@-r24)
+		MCD_MREQ_REG_IND_PREDEC_UNS_P,
+		-- Request memory (@r24+simm16)
+		MCD_MREQ_REG_REL_SGN_W,
+		-- Request memory (@r24+r8)
+		MCD_MREQ_REG_IDX_UNS_B,
+		-- Request memory (@r24+r8SX)
+		MCD_MREQ_REG_IDX_SGN_B,
+		-- Request memory (@r24+r16)
+		MCD_MREQ_REG_IDX_UNS_W,
+		-- Request memory (@r24+r16SX)
+		MCD_MREQ_REG_IDX_SGN_W,
+		-- Request memory (@r24+r24)
+		MCD_MREQ_REG_IDX_UNS_P,
+		-- Request memory (@PGC+simm16)
+		MCD_MREQ_PGC_REL_SGN_W,
+		-- Request memory (@PGC+imm24)
+		MCD_MREQ_PGC_REL_UNS_P,
+		-- Request memory (@MAR+)
+		MCD_MREQ_MAR_POSTINC,
+		-- Request memory (@MAR+, before all 24-bit register post-increments)
+		MCD_MREQ_MAR_POSTINC_REG_POSTINC,
+		-- Perform register post-increment
+		MCD_POSTINC,
+		-- Perform repeat step (REPI)
+		MCD_REPI,
+		-- Perform repeat step (REPR)
+		MCD_REPR,
+		-- Load factor latch with register operand (MULU)
+		MCD_MULU_LD_FACTOR,
+		-- Clear low destination register (MULU)
+		MCD_MULU_CLR_DST_LO,
+		-- Clear high destination register (MULU)
+		MCD_MULU_CLR_DST_HI,
+		-- Load the REPI state with the instruction size in bits (MULU)
+		MCD_MULU_LD_REPI,
+		-- Shift low destination register left (MULU)
+		MCD_MULU_SLA_DST_LO,
+		-- Shift high destination register left with carry (MULU)
+		MCD_MULU_RL_DST_HI,
+		-- Shift operand latch left (MULU)
+		MCD_MULU_SLA_OPERAND,
+		-- Add factor latch to low destination register (MULU)
+		MCD_MULU_ADD_DST_LO,
+		-- Add carry from MCD_MULU_ADD_DST_LO to high destination register (MULU)
+		MCD_MULU_ADX_DST_HI,
+		-- Perform repeat step (MULU)
+		MCD_MULU_REPEAT,
+		-- Load factor latch with register operand (MULS)
+		MCD_MULS_LD_FACTOR,
+		-- Clear low destination register (MULS)
+		MCD_MULS_CLR_DST_LO,
+		-- Clear high destination register (MULS)
+		MCD_MULS_CLR_DST_HI,
+		-- Load the REPI state with the instruction size in bits (MULS)
+		MCD_MULS_LD_REPI,
+		-- Shift low destination register left (MULS)
+		MCD_MULS_SLA_DST_LO,
+		-- Shift high destination register left with carry (MULS)
+		MCD_MULS_RL_DST_HI,
+		-- Shift operand latch left (MULS)
+		MCD_MULS_SLA_OPERAND,
+		-- Add factor latch to low destination register (MULS)
+		MCD_MULS_ADD_DST_LO,
+		-- Add sign-extended carry from MCD_MULS_ADD_DST_LO to high destination register (MULS)
+		MCD_MULS_ADX_DST_HI,
+		-- Perform repeat step (MULS)
+		MCD_MULS_REPEAT,
+		-- Shift quotient register left (DIVU)
+		MCD_DIVU_SLA_SRC_LO,
+		-- Shift remainder register left with carry (DIVU)
+		MCD_DIVU_RL_SRC_HI,
+		-- Compare operand latch with remainder register (DIVU)
+		MCD_DIVU_CP_OPERAND,
+		-- Correct overflow from MCD_DIVU_CP_OPERAND by clearing it if inverted borrow from MCD_DIVU_RL_SRC_HI was low (DIVU)
+		MCD_DIVU_CORRECT_BORROW,
+		-- Conditionally subtract operand latch from remainder register (DIVU)
+		MCD_DIVU_SUB_OPERAND,
+		-- Add inverted borrow from last cycle to quotient register (DIVU)
+		MCD_DIVU_ADX_SRC_LO,
+		-- Perform repeat step (DIVU)
+		MCD_DIVU_REPEAT
+		-- todo: DIVS
+	);
+	type cpu_mcd_entry_t is record
+		entry_type: cpu_mcd_entry_type_t;
+		inst_size: cpu_alu_data_size_t;
+		cycle_type: cpu_bus_cycle_type_t;
+	end record cpu_mcd_entry_t;
 	
 	type cpu_mucode_entry_idx_t is (
 		-- No operation

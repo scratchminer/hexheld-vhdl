@@ -63,7 +63,7 @@ begin
 	TB_RELOAD_n <= not tim_b(16);
 	
 	-- Multiplex timer A's clock sources onto one signal
-	process (tim_a_src, SYSDIV, CLK_SUB, EXT_n)
+	process (tim_a_src, SYSDIV, CLK_SUB, EXT_n) is
 		variable src_int: integer range 0 to 31;
 	begin
 		src_int := to_integer(unsigned(tim_a_src));
@@ -76,7 +76,7 @@ begin
 	end process;
 	
 	-- Multiplex timer B's clock sources onto one signal
-	process (tim_b_src, SYSDIV, CLK_SUB, EXT_n, tim_a)
+	process (tim_b_src, SYSDIV, CLK_SUB, EXT_n, tim_a) is
 		variable src_int: integer range 0 to 31;
 	begin
 		src_int := to_integer(unsigned(tim_b_src));
@@ -90,7 +90,7 @@ begin
 	end process;
 	
 	-- If timer A is enabled, increment its counter on the rising edge of its clock
-	process (tim_a_clk, RESET_n)
+	process (tim_a_clk, RESET_n) is
 	begin
 		if RESET_n = '0' then
 			tim_a(15 downto 0) <= x"0000";
@@ -115,7 +115,7 @@ begin
 	end process;
 	
 	-- If timer B is enabled, increment its counter on the rising edge of its clock
-	process (tim_b_clk, RESET_n)
+	process (tim_b_clk, RESET_n) is
 	begin
 		if RESET_n = '0' then
 			tim_b(15 downto 0) <= x"0000";
@@ -139,7 +139,7 @@ begin
 		end if;
 	end process;
 	
-	process (CLK_BUS, RESET_n)
+	process (CLK_BUS, RESET_n) is
 	begin
 		if RESET_n = '0' then
 			tim_a_enable_s <= '0';

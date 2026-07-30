@@ -50,11 +50,11 @@ entity hivecraft is
 		CON_CLK: out std_logic;
 		CON_LATCH: out std_logic;
 		
-		-- Analog-to-digital converter (from a transmission gate, RC filter and Schmitt-trigger inverter)
+		-- Analog-to-digital converter (from transmission gate, RC filter and Schmitt-trigger inverter)
 		AD_IN_n: in std_logic_vector(3 downto 0);
 		AD_SAMP_n: out std_logic_vector(3 downto 0);
 		
-		-- Audio output (PWM at 16 MHz, to a low-pass filter)
+		-- Audio output (PWM at 16 MHz, to low-pass filter)
 		AOUT_L: out std_logic;
 		AOUT_R: out std_logic;
 		
@@ -178,7 +178,7 @@ begin
 		WR_n => WR_n_s,
 		WORD_n => word_n,
 		WAIT_n => bus_wait_n,
-		BUSRQ_n => '1',
+		BUSREQ_n => '1',
 		--BUSACK_n => '1',
 		HALT_n => cpu_HALT_n
 	);
@@ -199,7 +199,7 @@ begin
 	WR_n <= WR_n_s;
 	
 	-- Set bus_wait_n if the HiveCraft is either waiting on an access, or has only fetched one byte of a two-byte access
-	process (RESET_n, wait_n, word_n, upper_byte_n_s, RD_n_s, WR_n_s)
+	process (RESET_n, wait_n, word_n, upper_byte_n_s, RD_n_s, WR_n_s) is
 	begin
 		if RESET_n = '0' then
 			bus_wait_n <= '1';
@@ -209,7 +209,7 @@ begin
 	end process;
 	
 	-- Set the chip selects according to the address bus's contents
-	process (A_s)
+	process (A_s) is
 		variable addr_int: integer range 0 to 16777215;
 	begin
 		addr_int := 0;
@@ -241,7 +241,7 @@ begin
 	end process;
 	
 	-- Drive the address bus only if we're making an access -- its contents technically shouldn't matter during this time though
-	process (A_s_s, RD_n_s, WR_n_s)
+	process (A_s_s, RD_n_s, WR_n_s) is
 	begin
 		if RD_n_s = '0' or WR_n_s = '0' then
 			A_s(23 downto 1) <= A_s_s(23 downto 1);
@@ -250,7 +250,7 @@ begin
 		end if;
 	end process;
 	
-	process (CLK_BUS_s, RESET_n, rom_wait_s, cs1_wait_s, cs2_wait_s)
+	process (CLK_BUS_s, RESET_n, rom_wait_s, cs1_wait_s, cs2_wait_s) is
 	begin
 		if RESET_n = '0' then
 			upper_byte_n <= '1';

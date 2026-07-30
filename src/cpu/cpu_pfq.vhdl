@@ -44,7 +44,7 @@ begin
 	
 	addr_o <= addr_s;
 	
-	process (ready_n)
+	process (ready_n) is
 	begin
 		if ready_n = "11111" then
 			empty_n <= '0';
@@ -53,7 +53,7 @@ begin
 		end if;
 	end process;
 	
-	process (CLK, RESET_n)
+	process (CLK, RESET_n) is
 	begin
 		if RESET_n = '0' then
 			word_ready_n_s <= '1';

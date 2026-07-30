@@ -25,7 +25,7 @@ architecture rtl of hivecraft_ram is
 	type hram_t is array (0 to 1535) of std_logic_vector(15 downto 0);
 	signal hram: hram_t;
 begin
-	process (CLK)
+	process (CLK) is
 		variable addr_int: integer range 0 to 16777215;
 	begin
 		if rising_edge(CLK) then

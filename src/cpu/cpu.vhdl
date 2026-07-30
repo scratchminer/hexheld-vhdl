@@ -27,7 +27,7 @@ entity hivecraft_cpu is
 		WR_n: out std_logic;
 		WORD_n: out std_logic;
 		WAIT_n: in std_logic;
-		BUSRQ_n: in std_logic;
+		BUSREQ_n: in std_logic;
 		BUSACK_n: out std_logic;
 		HALT_n: out std_logic
 	);
@@ -72,9 +72,9 @@ begin
 	
 	A <= A_s;
 	
-	process (RESET_n, pfq_read_n, pfq_word_n, pfq_addr)
+	process (RESET_n, pfq_read_n, pfq_word_n, pfq_addr) is
 	begin
-		-- EXC takes bus priority, then PFQ
+		-- BUS takes bus priority, then PFQ
 		if RESET_n = '0' then
 			RD_n_s <= '1';
 			WR_n_s <= '1';
@@ -93,7 +93,7 @@ begin
 		-- core is incapable of writing so far
 	end process;
 	
-	process (CLK, RESET_n)
+	process (CLK, RESET_n) is
 	begin
 		if RESET_n = '0' then
 			IACK_n <= '1';
