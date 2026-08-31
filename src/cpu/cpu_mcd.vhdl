@@ -25,18 +25,24 @@ architecture rtl of hivecraft_cpu_mcd is
 	-- Default ALU control: no ALU operation
 	constant alu_default: cpu_alu_control_t := (
 		operation => ALU_ADD,
-		src1.size => ALU_SIZE_POINTER,
-		src1.location => ALU_DATA_ZERO,
-		src1.sign_extend => false,
-		src2.size => ALU_SIZE_POINTER,
-		src2.location => ALU_DATA_ZERO,
-		src2.sign_extend => false,
+		src1 => (
+			size => ALU_SIZE_POINTER,
+			location => ALU_DATA_ZERO,
+			sign_extend => false
+		),
+		src2 => (
+			size => ALU_SIZE_POINTER,
+			location => ALU_DATA_ZERO,
+			sign_extend => false
+		),
 		src2_shift => ALU_SHIFT_NONE,
 		src2_add_carry => false,
 		src2_negate => false,
 		src2_aux_gate => false,
-		dest.size => ALU_SIZE_POINTER,
-		dest.location => ALU_DATA_ZERO,
+		dest => (
+			size => ALU_SIZE_POINTER,
+			location => ALU_DATA_ZERO
+		),
 		mode_aux => ALU_AUX_NONE,
 		mode_carry => ALU_CARRY_NORMAL,
 		mode_zero => ALU_ZERO_NORMAL,
@@ -44,7 +50,7 @@ architecture rtl of hivecraft_cpu_mcd is
 	);
 	
 	-- Default REG control: no flags written
-	constant reg_default: std_logic_vector(7 downto 0) := x"00";
+	constant reg_default: std_logic_vector(7 downto 0) := "00000000";
 	
 	-- Default BUS control: no memory requested
 	constant bus_default: cpu_bus_control_t := (
@@ -56,9 +62,17 @@ architecture rtl of hivecraft_cpu_mcd is
 	-- Default SEQ control: advance sequencer
 	constant seq_default: cpu_seq_control_t := (
 		cond => SEQ_CONDITION_ALWAYS,
-		run_next_true => MCD_NOP,
-		run_next_false => MCD_NOP,
-		halt => false,
+		run_next_true => (
+			entry_type => MCD_NOP,
+			inst_size => ALU_SIZE_WORD,
+			cycle_type => BUS_CYCLE_NONE
+		),
+		run_next_false => (
+			entry_type => MCD_NOP,
+			inst_size => ALU_SIZE_WORD,
+			cycle_type => BUS_CYCLE_NONE
+		),
+		halt => false
 	);
 begin
 	process (read_n, addr) is
@@ -80,6 +94,15 @@ begin
 					bus_ctrl.mode_mar <= BUS_ADDRESS_ALU_SRC1;
 					bus_ctrl.cycle_type <= addr.cycle_type;
 					seq_ctrl <= seq_default;
+					if addr.inst_size = ALU_SIZE_POINTER then
+						if addr.cycle_type = BUS_CYCLE_WRITE_WORD then
+							seq_ctrl.run_next_true.cycle_type <= BUS_CYCLE_WRITE_HIGH;
+						elsif addr.cycle_type = BUS_CYCLE_READ_WORD then
+							seq_ctrl.run_next_true.cycle_type <= BUS_CYCLE_READ_HIGH;
+						end if;
+						seq_ctrl.run_next_true.entry_type <= MCD_MREQ_MAR_POSTINC;
+						seq_ctrl.run_next_true.inst_size <= addr.inst_size;
+					end if;
 				when MCD_MREQ_ABS_UNS_P =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= ALU_SIZE_POINTER;
@@ -89,6 +112,15 @@ begin
 					bus_ctrl.mode_mar <= BUS_ADDRESS_ALU_SRC1;
 					bus_ctrl.cycle_type <= addr.cycle_type;
 					seq_ctrl <= seq_default;
+					if addr.inst_size = ALU_SIZE_POINTER then
+						if addr.cycle_type = BUS_CYCLE_WRITE_WORD then
+							seq_ctrl.run_next_true.cycle_type <= BUS_CYCLE_WRITE_HIGH;
+						elsif addr.cycle_type = BUS_CYCLE_READ_WORD then
+							seq_ctrl.run_next_true.cycle_type <= BUS_CYCLE_READ_HIGH;
+						end if;
+						seq_ctrl.run_next_true.entry_type <= MCD_MREQ_MAR_POSTINC;
+						seq_ctrl.run_next_true.inst_size <= addr.inst_size;
+					end if;
 				when MCD_MREQ_ABS_IDX_UNS_B =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= ALU_SIZE_POINTER;
@@ -100,6 +132,15 @@ begin
 					bus_ctrl.mode_mar <= BUS_ADDRESS_ALU_DEST;
 					bus_ctrl.cycle_type <= addr.cycle_type;
 					seq_ctrl <= seq_default;
+					if addr.inst_size = ALU_SIZE_POINTER then
+						if addr.cycle_type = BUS_CYCLE_WRITE_WORD then
+							seq_ctrl.run_next_true.cycle_type <= BUS_CYCLE_WRITE_HIGH;
+						elsif addr.cycle_type = BUS_CYCLE_READ_WORD then
+							seq_ctrl.run_next_true.cycle_type <= BUS_CYCLE_READ_HIGH;
+						end if;
+						seq_ctrl.run_next_true.entry_type <= MCD_MREQ_MAR_POSTINC;
+						seq_ctrl.run_next_true.inst_size <= addr.inst_size;
+					end if;
 				when MCD_MREQ_ABS_IDX_SGN_B =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= ALU_SIZE_POINTER;
@@ -112,6 +153,15 @@ begin
 					bus_ctrl.mode_mar <= BUS_ADDRESS_ALU_DEST;
 					bus_ctrl.cycle_type <= addr.cycle_type;
 					seq_ctrl <= seq_default;
+					if addr.inst_size = ALU_SIZE_POINTER then
+						if addr.cycle_type = BUS_CYCLE_WRITE_WORD then
+							seq_ctrl.run_next_true.cycle_type <= BUS_CYCLE_WRITE_HIGH;
+						elsif addr.cycle_type = BUS_CYCLE_READ_WORD then
+							seq_ctrl.run_next_true.cycle_type <= BUS_CYCLE_READ_HIGH;
+						end if;
+						seq_ctrl.run_next_true.entry_type <= MCD_MREQ_MAR_POSTINC;
+						seq_ctrl.run_next_true.inst_size <= addr.inst_size;
+					end if;
 				when MCD_MREQ_ABS_IDX_UNS_W =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= ALU_SIZE_POINTER;
@@ -123,6 +173,15 @@ begin
 					bus_ctrl.mode_mar <= BUS_ADDRESS_ALU_DEST;
 					bus_ctrl.cycle_type <= addr.cycle_type;
 					seq_ctrl <= seq_default;
+					if addr.inst_size = ALU_SIZE_POINTER then
+						if addr.cycle_type = BUS_CYCLE_WRITE_WORD then
+							seq_ctrl.run_next_true.cycle_type <= BUS_CYCLE_WRITE_HIGH;
+						elsif addr.cycle_type = BUS_CYCLE_READ_WORD then
+							seq_ctrl.run_next_true.cycle_type <= BUS_CYCLE_READ_HIGH;
+						end if;
+						seq_ctrl.run_next_true.entry_type <= MCD_MREQ_MAR_POSTINC;
+						seq_ctrl.run_next_true.inst_size <= addr.inst_size;
+					end if;
 				when MCD_MREQ_ABS_IDX_SGN_W =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= ALU_SIZE_POINTER;
@@ -135,6 +194,15 @@ begin
 					bus_ctrl.mode_mar <= BUS_ADDRESS_ALU_DEST;
 					bus_ctrl.cycle_type <= addr.cycle_type;
 					seq_ctrl <= seq_default;
+					if addr.inst_size = ALU_SIZE_POINTER then
+						if addr.cycle_type = BUS_CYCLE_WRITE_WORD then
+							seq_ctrl.run_next_true.cycle_type <= BUS_CYCLE_WRITE_HIGH;
+						elsif addr.cycle_type = BUS_CYCLE_READ_WORD then
+							seq_ctrl.run_next_true.cycle_type <= BUS_CYCLE_READ_HIGH;
+						end if;
+						seq_ctrl.run_next_true.entry_type <= MCD_MREQ_MAR_POSTINC;
+						seq_ctrl.run_next_true.inst_size <= addr.inst_size;
+					end if;
 				when MCD_MREQ_ABS_IDX_UNS_P =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= ALU_SIZE_POINTER;
@@ -146,6 +214,15 @@ begin
 					bus_ctrl.mode_mar <= BUS_ADDRESS_ALU_DEST;
 					bus_ctrl.cycle_type <= addr.cycle_type;
 					seq_ctrl <= seq_default;
+					if addr.inst_size = ALU_SIZE_POINTER then
+						if addr.cycle_type = BUS_CYCLE_WRITE_WORD then
+							seq_ctrl.run_next_true.cycle_type <= BUS_CYCLE_WRITE_HIGH;
+						elsif addr.cycle_type = BUS_CYCLE_READ_WORD then
+							seq_ctrl.run_next_true.cycle_type <= BUS_CYCLE_READ_HIGH;
+						end if;
+						seq_ctrl.run_next_true.entry_type <= MCD_MREQ_MAR_POSTINC;
+						seq_ctrl.run_next_true.inst_size <= addr.inst_size;
+					end if;
 				when MCD_MREQ_REG_IND_UNS_P =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= ALU_SIZE_POINTER;
@@ -155,6 +232,15 @@ begin
 					bus_ctrl.mode_mar <= BUS_ADDRESS_ALU_SRC1;
 					bus_ctrl.cycle_type <= addr.cycle_type;
 					seq_ctrl <= seq_default;
+					if addr.inst_size = ALU_SIZE_POINTER then
+						if addr.cycle_type = BUS_CYCLE_WRITE_WORD then
+							seq_ctrl.run_next_true.cycle_type <= BUS_CYCLE_WRITE_HIGH;
+						elsif addr.cycle_type = BUS_CYCLE_READ_WORD then
+							seq_ctrl.run_next_true.cycle_type <= BUS_CYCLE_READ_HIGH;
+						end if;
+						seq_ctrl.run_next_true.entry_type <= MCD_MREQ_MAR_POSTINC;
+						seq_ctrl.run_next_true.inst_size <= addr.inst_size;
+					end if;
 				when MCD_MREQ_REG_IND_POSTINC_UNS_P =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= ALU_SIZE_POINTER;
@@ -167,7 +253,17 @@ begin
 					bus_ctrl <= bus_default;
 					bus_ctrl.mode_mar <= BUS_ADDRESS_ALU_SRC1;
 					bus_ctrl.cycle_type <= addr.cycle_type;
-					seq_ctrl.run_next_true <= MCD_POSTINC;
+					seq_ctrl <= seq_default;
+					seq_ctrl.run_next_true.entry_type <= MCD_POSTINC;
+					if addr.inst_size = ALU_SIZE_POINTER then
+						if addr.cycle_type = BUS_CYCLE_WRITE_WORD then
+							seq_ctrl.run_next_true.cycle_type <= BUS_CYCLE_WRITE_HIGH;
+						elsif addr.cycle_type = BUS_CYCLE_READ_WORD then
+							seq_ctrl.run_next_true.cycle_type <= BUS_CYCLE_READ_HIGH;
+						end if;
+						seq_ctrl.run_next_true.entry_type <= MCD_MREQ_MAR_POSTINC_REG_POSTINC;
+						seq_ctrl.run_next_true.inst_size <= addr.inst_size;
+					end if;
 				when MCD_MREQ_REG_IND_PREDEC_UNS_P =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= ALU_SIZE_POINTER;
@@ -179,7 +275,8 @@ begin
 					alu_ctrl.dest.location <= ALU_DATA_IMMWORD_0_REG_2_RM;
 					reg_ctrl <= reg_default;
 					bus_ctrl <= bus_default;
-					seq_ctrl.run_next_true <= MCD_MREQ_REG_IND_UNS_P;
+					seq_ctrl <= seq_default;
+					seq_ctrl.run_next_true.entry_type <= MCD_MREQ_REG_IND_UNS_P;
 				when MCD_MREQ_REG_REL_SGN_W =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= ALU_SIZE_POINTER;
@@ -192,6 +289,15 @@ begin
 					bus_ctrl.mode_mar <= BUS_ADDRESS_ALU_DEST;
 					bus_ctrl.cycle_type <= addr.cycle_type;
 					seq_ctrl <= seq_default;
+					if addr.inst_size = ALU_SIZE_POINTER then
+						if addr.cycle_type = BUS_CYCLE_WRITE_WORD then
+							seq_ctrl.run_next_true.cycle_type <= BUS_CYCLE_WRITE_HIGH;
+						elsif addr.cycle_type = BUS_CYCLE_READ_WORD then
+							seq_ctrl.run_next_true.cycle_type <= BUS_CYCLE_READ_HIGH;
+						end if;
+						seq_ctrl.run_next_true.entry_type <= MCD_MREQ_MAR_POSTINC;
+						seq_ctrl.run_next_true.inst_size <= addr.inst_size;
+					end if;
 				when MCD_MREQ_REG_IDX_UNS_B =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= ALU_SIZE_POINTER;
@@ -203,6 +309,15 @@ begin
 					bus_ctrl.mode_mar <= BUS_ADDRESS_ALU_DEST;
 					bus_ctrl.cycle_type <= addr.cycle_type;
 					seq_ctrl <= seq_default;
+					if addr.inst_size = ALU_SIZE_POINTER then
+						if addr.cycle_type = BUS_CYCLE_WRITE_WORD then
+							seq_ctrl.run_next_true.cycle_type <= BUS_CYCLE_WRITE_HIGH;
+						elsif addr.cycle_type = BUS_CYCLE_READ_WORD then
+							seq_ctrl.run_next_true.cycle_type <= BUS_CYCLE_READ_HIGH;
+						end if;
+						seq_ctrl.run_next_true.entry_type <= MCD_MREQ_MAR_POSTINC;
+						seq_ctrl.run_next_true.inst_size <= addr.inst_size;
+					end if;
 				when MCD_MREQ_REG_IDX_SGN_B =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= ALU_SIZE_POINTER;
@@ -215,6 +330,15 @@ begin
 					bus_ctrl.mode_mar <= BUS_ADDRESS_ALU_DEST;
 					bus_ctrl.cycle_type <= addr.cycle_type;
 					seq_ctrl <= seq_default;
+					if addr.inst_size = ALU_SIZE_POINTER then
+						if addr.cycle_type = BUS_CYCLE_WRITE_WORD then
+							seq_ctrl.run_next_true.cycle_type <= BUS_CYCLE_WRITE_HIGH;
+						elsif addr.cycle_type = BUS_CYCLE_READ_WORD then
+							seq_ctrl.run_next_true.cycle_type <= BUS_CYCLE_READ_HIGH;
+						end if;
+						seq_ctrl.run_next_true.entry_type <= MCD_MREQ_MAR_POSTINC;
+						seq_ctrl.run_next_true.inst_size <= addr.inst_size;
+					end if;
 				when MCD_MREQ_REG_IDX_UNS_W =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= ALU_SIZE_POINTER;
@@ -226,6 +350,15 @@ begin
 					bus_ctrl.mode_mar <= BUS_ADDRESS_ALU_DEST;
 					bus_ctrl.cycle_type <= addr.cycle_type;
 					seq_ctrl <= seq_default;
+					if addr.inst_size = ALU_SIZE_POINTER then
+						if addr.cycle_type = BUS_CYCLE_WRITE_WORD then
+							seq_ctrl.run_next_true.cycle_type <= BUS_CYCLE_WRITE_HIGH;
+						elsif addr.cycle_type = BUS_CYCLE_READ_WORD then
+							seq_ctrl.run_next_true.cycle_type <= BUS_CYCLE_READ_HIGH;
+						end if;
+						seq_ctrl.run_next_true.entry_type <= MCD_MREQ_MAR_POSTINC;
+						seq_ctrl.run_next_true.inst_size <= addr.inst_size;
+					end if;
 				when MCD_MREQ_REG_IDX_SGN_W =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= ALU_SIZE_POINTER;
@@ -238,6 +371,15 @@ begin
 					bus_ctrl.mode_mar <= BUS_ADDRESS_ALU_DEST;
 					bus_ctrl.cycle_type <= addr.cycle_type;
 					seq_ctrl <= seq_default;
+					if addr.inst_size = ALU_SIZE_POINTER then
+						if addr.cycle_type = BUS_CYCLE_WRITE_WORD then
+							seq_ctrl.run_next_true.cycle_type <= BUS_CYCLE_WRITE_HIGH;
+						elsif addr.cycle_type = BUS_CYCLE_READ_WORD then
+							seq_ctrl.run_next_true.cycle_type <= BUS_CYCLE_READ_HIGH;
+						end if;
+						seq_ctrl.run_next_true.entry_type <= MCD_MREQ_MAR_POSTINC;
+						seq_ctrl.run_next_true.inst_size <= addr.inst_size;
+					end if;
 				when MCD_MREQ_REG_IDX_UNS_P =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= ALU_SIZE_POINTER;
@@ -249,11 +391,20 @@ begin
 					bus_ctrl.mode_mar <= BUS_ADDRESS_ALU_DEST;
 					bus_ctrl.cycle_type <= addr.cycle_type;
 					seq_ctrl <= seq_default;
+					if addr.inst_size = ALU_SIZE_POINTER then
+						if addr.cycle_type = BUS_CYCLE_WRITE_WORD then
+							seq_ctrl.run_next_true.cycle_type <= BUS_CYCLE_WRITE_HIGH;
+						elsif addr.cycle_type = BUS_CYCLE_READ_WORD then
+							seq_ctrl.run_next_true.cycle_type <= BUS_CYCLE_READ_HIGH;
+						end if;
+						seq_ctrl.run_next_true.entry_type <= MCD_MREQ_MAR_POSTINC;
+						seq_ctrl.run_next_true.inst_size <= addr.inst_size;
+					end if;
 				when MCD_MREQ_MAR_POSTINC =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= ALU_SIZE_POINTER;
 					alu_ctrl.src1.location <= ALU_DATA_LATCH_MAR;
-					alu_ctrl.src2.size <= addr.inst_size;
+					alu_ctrl.src2.size <= ALU_SIZE_WORD;
 					alu_ctrl.src2.location <= ALU_DATA_SIZE;
 					alu_ctrl.dest.size <= ALU_SIZE_POINTER;
 					alu_ctrl.dest.location <= ALU_DATA_ZERO;
@@ -266,7 +417,7 @@ begin
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= ALU_SIZE_POINTER;
 					alu_ctrl.src1.location <= ALU_DATA_LATCH_MAR;
-					alu_ctrl.src2.size <= addr.inst_size;
+					alu_ctrl.src2.size <= ALU_SIZE_WORD;
 					alu_ctrl.src2.location <= ALU_DATA_SIZE;
 					alu_ctrl.dest.size <= ALU_SIZE_POINTER;
 					alu_ctrl.dest.location <= ALU_DATA_ZERO;
@@ -275,7 +426,8 @@ begin
 					bus_ctrl.mode_mar <= BUS_ADDRESS_ALU_DEST;
 					bus_ctrl.cycle_type <= addr.cycle_type;
 					seq_ctrl <= seq_default;
-					seq_ctrl.run_next_true <= MCD_POSTINC;
+					seq_ctrl.run_next_true.entry_type <= MCD_POSTINC;
+					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_POSTINC =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= ALU_SIZE_POINTER;
@@ -329,7 +481,8 @@ begin
 					reg_ctrl <= reg_default;
 					bus_ctrl <= bus_default;
 					seq_ctrl <= seq_default;
-					seq_ctrl.run_next_true <= MCD_MULU_CLR_DST_LO;
+					seq_ctrl.run_next_true.entry_type <= MCD_MULU_CLR_DST_LO;
+					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_MULU_CLR_DST_LO =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= addr.inst_size;
@@ -339,7 +492,8 @@ begin
 					reg_ctrl <= reg_default;
 					bus_ctrl <= bus_default;
 					seq_ctrl <= seq_default;
-					seq_ctrl.run_next_true <= MCD_MULU_CLR_DST_HI;
+					seq_ctrl.run_next_true.entry_type <= MCD_MULU_CLR_DST_HI;
+					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_MULU_CLR_DST_HI =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= addr.inst_size;
@@ -349,7 +503,8 @@ begin
 					reg_ctrl <= reg_default;
 					bus_ctrl <= bus_default;
 					seq_ctrl <= seq_default;
-					seq_ctrl.run_next_true <= MCD_MULU_LD_REPI;
+					seq_ctrl.run_next_true.entry_type <= MCD_MULU_LD_REPI;
+					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_MULU_LD_REPI =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= addr.inst_size;
@@ -359,42 +514,46 @@ begin
 					reg_ctrl <= reg_default;
 					bus_ctrl <= bus_default;
 					seq_ctrl <= seq_default;
-					seq_ctrl.run_next_true <= MCD_MULU_SLA_DST_LO;
+					seq_ctrl.run_next_true.entry_type <= MCD_MULU_SLA_DST_LO;
+					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_MULU_SLA_DST_LO =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src2.size <= addr.inst_size;
 					alu_ctrl.src2.location <= ALU_DATA_IMMWORD_0_REG_8;
-					alu_ctrl.src2_shift = ALU_SHIFT_LEFT;
+					alu_ctrl.src2_shift <= ALU_SHIFT_LEFT;
 					alu_ctrl.dest.size <= addr.inst_size;
 					alu_ctrl.dest.location <= ALU_DATA_IMMWORD_0_REG_8;
 					alu_ctrl.mode_aux <= ALU_AUX_CARRY;
 					reg_ctrl <= reg_default;
 					bus_ctrl <= bus_default;
 					seq_ctrl <= seq_default;
-					seq_ctrl.run_next_true <= MCD_MULU_RL_DST_HI;
+					seq_ctrl.run_next_true.entry_type <= MCD_MULU_RL_DST_HI;
+					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_MULU_RL_DST_HI =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src2.size <= addr.inst_size;
 					alu_ctrl.src2.location <= ALU_DATA_REG_R0;
-					alu_ctrl.src2_shift = ALU_SHIFT_LEFT_CARRY;
+					alu_ctrl.src2_shift <= ALU_SHIFT_LEFT_CARRY;
 					alu_ctrl.dest.size <= addr.inst_size;
 					alu_ctrl.dest.location <= ALU_DATA_REG_R0;
 					alu_ctrl.mode_aux <= ALU_AUX_CARRY;
 					reg_ctrl <= reg_default;
 					bus_ctrl <= bus_default;
 					seq_ctrl <= seq_default;
-					seq_ctrl.run_next_true <= MCD_MULU_SLA_OPERAND;
+					seq_ctrl.run_next_true.entry_type <= MCD_MULU_SLA_OPERAND;
+					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_MULU_SLA_OPERAND =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src2.size <= addr.inst_size;
 					alu_ctrl.src2.location <= ALU_DATA_LATCH_OPERAND;
-					alu_ctrl.src2_shift = ALU_SHIFT_LEFT;
+					alu_ctrl.src2_shift <= ALU_SHIFT_LEFT;
 					alu_ctrl.dest.size <= addr.inst_size;
 					alu_ctrl.dest.location <= ALU_DATA_LATCH_OPERAND;
 					reg_ctrl <= reg_default;
 					bus_ctrl <= bus_default;
 					seq_ctrl <= seq_default;
-					seq_ctrl.run_next_true <= MCD_MULU_ADD_DST_LO;
+					seq_ctrl.run_next_true.entry_type <= MCD_MULU_ADD_DST_LO;
+					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_MULU_ADD_DST_LO =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= addr.inst_size;
@@ -407,7 +566,8 @@ begin
 					reg_ctrl <= "01000000";
 					bus_ctrl <= bus_default;
 					seq_ctrl <= seq_default;
-					seq_ctrl.run_next_true <= MCD_MULU_ADX_DST_HI;
+					seq_ctrl.run_next_true.entry_type <= MCD_MULU_ADX_DST_HI;
+					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_MULU_ADX_DST_HI =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= addr.inst_size;
@@ -422,7 +582,8 @@ begin
 					reg_ctrl <= "11001100";
 					bus_ctrl <= bus_default;
 					seq_ctrl <= seq_default;
-					seq_ctrl.run_next_true <= MCD_MULU_REPEAT;
+					seq_ctrl.run_next_true.entry_type <= MCD_MULU_REPEAT;
+					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_MULU_REPEAT =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= ALU_SIZE_BYTE;
@@ -438,7 +599,8 @@ begin
 					bus_ctrl <= bus_default;
 					seq_ctrl <= seq_default;
 					seq_ctrl.cond <= SEQ_CONDITION_DJNZ;
-					seq_ctrl.run_next_true <= MCD_MULU_SLA_DST_LO;
+					seq_ctrl.run_next_true.entry_type <= MCD_MULU_SLA_DST_LO;
+					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_MULS_LD_FACTOR =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= addr.inst_size;
@@ -448,7 +610,8 @@ begin
 					reg_ctrl <= reg_default;
 					bus_ctrl <= bus_default;
 					seq_ctrl <= seq_default;
-					seq_ctrl.run_next_true <= MCD_MULS_CLR_DST_LO;
+					seq_ctrl.run_next_true.entry_type <= MCD_MULS_CLR_DST_LO;
+					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_MULS_CLR_DST_LO =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= addr.inst_size;
@@ -458,7 +621,8 @@ begin
 					reg_ctrl <= reg_default;
 					bus_ctrl <= bus_default;
 					seq_ctrl <= seq_default;
-					seq_ctrl.run_next_true <= MCD_MULS_CLR_DST_HI;
+					seq_ctrl.run_next_true.entry_type <= MCD_MULS_CLR_DST_HI;
+					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_MULS_CLR_DST_HI =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= addr.inst_size;
@@ -468,7 +632,8 @@ begin
 					reg_ctrl <= reg_default;
 					bus_ctrl <= bus_default;
 					seq_ctrl <= seq_default;
-					seq_ctrl.run_next_true <= MCD_MULS_LD_REPI;
+					seq_ctrl.run_next_true.entry_type <= MCD_MULS_LD_REPI;
+					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_MULS_LD_REPI =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= addr.inst_size;
@@ -478,42 +643,46 @@ begin
 					reg_ctrl <= reg_default;
 					bus_ctrl <= bus_default;
 					seq_ctrl <= seq_default;
-					seq_ctrl.run_next_true <= MCD_MULS_SLA_DST_LO;
+					seq_ctrl.run_next_true.entry_type <= MCD_MULS_SLA_DST_LO;
+					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_MULS_SLA_DST_LO =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src2.size <= addr.inst_size;
 					alu_ctrl.src2.location <= ALU_DATA_IMMWORD_0_REG_8;
-					alu_ctrl.src2_shift = ALU_SHIFT_LEFT;
+					alu_ctrl.src2_shift <= ALU_SHIFT_LEFT;
 					alu_ctrl.dest.size <= addr.inst_size;
 					alu_ctrl.dest.location <= ALU_DATA_IMMWORD_0_REG_8;
 					alu_ctrl.mode_aux <= ALU_AUX_CARRY;
 					reg_ctrl <= reg_default;
 					bus_ctrl <= bus_default;
 					seq_ctrl <= seq_default;
-					seq_ctrl.run_next_true <= MCD_MULS_RL_DST_HI;
+					seq_ctrl.run_next_true.entry_type <= MCD_MULS_RL_DST_HI;
+					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_MULS_RL_DST_HI =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src2.size <= addr.inst_size;
 					alu_ctrl.src2.location <= ALU_DATA_REG_R0;
-					alu_ctrl.src2_shift = ALU_SHIFT_LEFT_CARRY;
+					alu_ctrl.src2_shift <= ALU_SHIFT_LEFT_CARRY;
 					alu_ctrl.dest.size <= addr.inst_size;
 					alu_ctrl.dest.location <= ALU_DATA_REG_R0;
 					alu_ctrl.mode_aux <= ALU_AUX_CARRY;
 					reg_ctrl <= reg_default;
 					bus_ctrl <= bus_default;
 					seq_ctrl <= seq_default;
-					seq_ctrl.run_next_true <= MCD_MULS_SLA_OPERAND;
+					seq_ctrl.run_next_true.entry_type <= MCD_MULS_SLA_OPERAND;
+					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_MULS_SLA_OPERAND =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src2.size <= addr.inst_size;
 					alu_ctrl.src2.location <= ALU_DATA_LATCH_OPERAND;
-					alu_ctrl.src2_shift = ALU_SHIFT_LEFT;
+					alu_ctrl.src2_shift <= ALU_SHIFT_LEFT;
 					alu_ctrl.dest.size <= addr.inst_size;
 					alu_ctrl.dest.location <= ALU_DATA_LATCH_OPERAND;
 					reg_ctrl <= reg_default;
 					bus_ctrl <= bus_default;
 					seq_ctrl <= seq_default;
-					seq_ctrl.run_next_true <= MCD_MULS_ADD_DST_LO;
+					seq_ctrl.run_next_true.entry_type <= MCD_MULS_ADD_DST_LO;
+					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_MULS_ADD_DST_LO =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= addr.inst_size;
@@ -528,7 +697,8 @@ begin
 					reg_ctrl <= "01001000";
 					bus_ctrl <= bus_default;
 					seq_ctrl <= seq_default;
-					seq_ctrl.run_next_true <= MCD_MULS_ADX_DST_HI;
+					seq_ctrl.run_next_true.entry_type <= MCD_MULS_ADX_DST_HI;
+					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_MULS_ADX_DST_HI =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= addr.inst_size;
@@ -548,7 +718,8 @@ begin
 					reg_ctrl <= "11001100";
 					bus_ctrl <= bus_default;
 					seq_ctrl <= seq_default;
-					seq_ctrl.run_next_true <= MCD_MULS_REPEAT;
+					seq_ctrl.run_next_true.entry_type <= MCD_MULS_REPEAT;
+					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_MULS_REPEAT =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= ALU_SIZE_BYTE;
@@ -564,7 +735,8 @@ begin
 					bus_ctrl <= bus_default;
 					seq_ctrl <= seq_default;
 					seq_ctrl.cond <= SEQ_CONDITION_DJNZ;
-					seq_ctrl.run_next_true <= MCD_MULS_SLA_DST_LO;
+					seq_ctrl.run_next_true.entry_type <= MCD_MULS_SLA_DST_LO;
+					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_DIVU_SLA_SRC_LO =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src2.size <= addr.inst_size;
@@ -576,7 +748,8 @@ begin
 					reg_ctrl <= "00001000";
 					bus_ctrl <= bus_default;
 					seq_ctrl <= seq_default;
-					seq_ctrl.run_next_true <= MCD_DIVU_RL_SRC_HI;
+					seq_ctrl.run_next_true.entry_type <= MCD_DIVU_RL_SRC_HI;
+					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_DIVU_RL_SRC_HI =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src2.size <= addr.inst_size;
@@ -588,7 +761,8 @@ begin
 					reg_ctrl <= "00001000";
 					bus_ctrl <= bus_default;
 					seq_ctrl <= seq_default;
-					seq_ctrl.run_next_true <= MCD_DIVU_CP_OPERAND;
+					seq_ctrl.run_next_true.entry_type <= MCD_DIVU_CP_OPERAND;
+					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_DIVU_CP_OPERAND =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= addr.inst_size;
@@ -601,8 +775,10 @@ begin
 					bus_ctrl <= bus_default;
 					seq_ctrl <= seq_default;
 					seq_ctrl.cond <= SEQ_CONDITION_C;
-					seq_ctrl.run_next_true <= MCD_DIVU_CORRECT_BORROW;
-					seq_ctrl.run_next_false <= MCD_DIVU_SUB_OPERAND;
+					seq_ctrl.run_next_true.entry_type <= MCD_DIVU_CORRECT_BORROW;
+					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
+					seq_ctrl.run_next_false.entry_type <= MCD_DIVU_SUB_OPERAND;
+					seq_ctrl.run_next_false.inst_size <= addr.inst_size;
 				when MCD_DIVU_CORRECT_BORROW =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= addr.inst_size;
@@ -618,7 +794,8 @@ begin
 					reg_ctrl <= "00001100";
 					bus_ctrl <= bus_default;
 					seq_ctrl <= seq_default;
-					seq_ctrl.run_next_true <= MCD_DIVU_ADX_SRC_LO;
+					seq_ctrl.run_next_true.entry_type <= MCD_DIVU_ADX_SRC_LO;
+					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_DIVU_SUB_OPERAND =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= addr.inst_size;
@@ -632,7 +809,8 @@ begin
 					reg_ctrl <= reg_default;
 					bus_ctrl <= bus_default;
 					seq_ctrl <= seq_default;
-					seq_ctrl.run_next_true <= MCD_DIVU_ADX_SRC_LO;
+					seq_ctrl.run_next_true.entry_type <= MCD_DIVU_ADX_SRC_LO;
+					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_DIVU_ADX_SRC_LO =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src2.size <= addr.inst_size;
@@ -644,7 +822,8 @@ begin
 					reg_ctrl <= "11000000";
 					bus_ctrl <= bus_default;
 					seq_ctrl <= seq_default;
-					seq_ctrl.run_next_true <= MCD_DIVU_REPEAT;
+					seq_ctrl.run_next_true.entry_type <= MCD_DIVU_REPEAT;
+					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_DIVU_REPEAT =>
 					alu_ctrl <= alu_default;
 					alu_ctrl.src1.size <= ALU_SIZE_BYTE;
@@ -661,7 +840,8 @@ begin
 					bus_ctrl <= bus_default;
 					seq_ctrl <= seq_default;
 					seq_ctrl.cond <= SEQ_CONDITION_DJNZ;
-					seq_ctrl.run_next_true <= MCD_DIVU_SLA_SRC_LO;
+					seq_ctrl.run_next_true.entry_type <= MCD_DIVU_SLA_SRC_LO;
+					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when others =>
 					-- todo
 					alu_ctrl <= alu_default;
@@ -669,8 +849,6 @@ begin
 					bus_ctrl <= bus_default;
 					seq_ctrl <= seq_default;
 			end case;
-			
-			-- todo: patch the decoded micro-instruction so 24-bit accesses are caught and replaced with 16/8-bit accesses
 		end if;
 	end process;
 end rtl;

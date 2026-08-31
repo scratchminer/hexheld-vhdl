@@ -73,7 +73,7 @@ package hivecraft_cpu_pack is
 		ALU_SHIFT_LEFT,
 		-- ABCDEFGH to BCDEFGHX; carry out = A
 		ALU_SHIFT_LEFT_CARRY,
-		-- ABCDEFGH to BCDEFGHA; carry out = 0
+		-- ABCDEFGH to BCDEFGHA; carry out = A
 		ALU_SHIFT_LEFT_BARREL,
 		-- ABCDEFGH to 0ABCDEFG; carry out = H
 		ALU_SHIFT_RIGHT_LOGICAL,
@@ -81,7 +81,7 @@ package hivecraft_cpu_pack is
 		ALU_SHIFT_RIGHT_ARITHMETIC,
 		-- ABCDEFGH to XABCDEFG; carry out = H
 		ALU_SHIFT_RIGHT_CARRY,
-		-- ABCDEFGH to HABCDEFG; carry out = 0
+		-- ABCDEFGH to HABCDEFG; carry out = H
 		ALU_SHIFT_RIGHT_BARREL,
 		-- ABCDEFGH to EFGHABCD; carry out = 0
 		ALU_SHIFT_SWAP
@@ -165,11 +165,7 @@ package hivecraft_cpu_pack is
 		-- Write the ALU's second operand to MDR in the first half of the cycle
 		BUS_DATA_ALU_SRC2,
 		-- Write the ALU's result to MDR in the second half of the cycle
-		BUS_DATA_ALU_DEST,
-		-- Shift the existing MDR value left 8 bits, so $AABBCC becomes $BBCC00
-		BUS_DATA_SHIFT_LEFT,
-		-- Shift the existing MDR value right 16 bits, so $AABBCC becomes $0000AA
-		BUS_DATA_SHIFT_RIGHT
+		BUS_DATA_ALU_DEST
 	);
 	type cpu_bus_cycle_type_t is (
 		-- Ignore the data bus
@@ -178,57 +174,20 @@ package hivecraft_cpu_pack is
 		BUS_CYCLE_READ_BYTE,
 		-- Read the data bus into the lower 16 bits of MDR
 		BUS_CYCLE_READ_WORD,
+		-- Read the lower 8 bits of the data bus into the higher 8 bits of MDR
+		BUS_CYCLE_READ_HIGH,
 		-- Write the lower 8 bits of MDR to the lower 8 bits of the data bus
 		BUS_CYCLE_WRITE_BYTE,
 		-- Write the lower 16 bits of MDR to the data bus
-		BUS_CYCLE_WRITE_WORD
+		BUS_CYCLE_WRITE_WORD,
+		-- Read the higher 8 bits of MDR to the lower 8 bits of the data bus
+		BUS_CYCLE_WRITE_HIGH
 	);
 	type cpu_bus_control_t is record
 		mode_mar: cpu_bus_address_mode_t;
 		mode_mdr: cpu_bus_data_mode_t;
 		cycle_type: cpu_bus_cycle_type_t;
 	end record cpu_bus_control_t;
-	
-	type cpu_seq_branch_condition_t is (
-		-- Z or (S xor VP)
-		SEQ_CONDITION_LE,
-		-- Z nor (S xor VP)
-		SEQ_CONDITION_GT,
-		-- S xor VP
-		SEQ_CONDITION_LT,
-		-- S xnor VP
-		SEQ_CONDITION_GE,
-		-- C or Z
-		SEQ_CONDITION_ULE,
-		-- C nor Z
-		SEQ_CONDITION_UGT,
-		-- C
-		SEQ_CONDITION_C,
-		-- not C
-		SEQ_CONDITION_NC,
-		-- S
-		SEQ_CONDITION_M,
-		-- not S
-		SEQ_CONDITION_P,
-		-- VP
-		SEQ_CONDITION_OV,
-		-- not VP
-		SEQ_CONDITION_NOV,
-		-- Z
-		SEQ_CONDITION_Z,
-		-- not Z
-		SEQ_CONDITION_NZ,
-		-- 1
-		SEQ_CONDITION_ALWAYS,
-		-- not AUX
-		SEQ_CONDITION_DJNZ
-	);
-	type cpu_seq_control_t is record
-		cond: cpu_seq_branch_condition_t;
-		run_next_true: cpu_mcd_entry_t;
-		run_next_false: cpu_mcd_entry_t;
-		halt: boolean;
-	end record cpu_seq_control_t;
 	
 	type cpu_mcd_entry_type_t is (
 		-- No operation
@@ -340,6 +299,47 @@ package hivecraft_cpu_pack is
 		inst_size: cpu_alu_data_size_t;
 		cycle_type: cpu_bus_cycle_type_t;
 	end record cpu_mcd_entry_t;
+	
+	type cpu_seq_branch_condition_t is (
+		-- Z or (S xor VP)
+		SEQ_CONDITION_LE,
+		-- Z nor (S xor VP)
+		SEQ_CONDITION_GT,
+		-- S xor VP
+		SEQ_CONDITION_LT,
+		-- S xnor VP
+		SEQ_CONDITION_GE,
+		-- C or Z
+		SEQ_CONDITION_ULE,
+		-- C nor Z
+		SEQ_CONDITION_UGT,
+		-- C
+		SEQ_CONDITION_C,
+		-- not C
+		SEQ_CONDITION_NC,
+		-- S
+		SEQ_CONDITION_M,
+		-- not S
+		SEQ_CONDITION_P,
+		-- VP
+		SEQ_CONDITION_OV,
+		-- not VP
+		SEQ_CONDITION_NOV,
+		-- Z
+		SEQ_CONDITION_Z,
+		-- not Z
+		SEQ_CONDITION_NZ,
+		-- 1
+		SEQ_CONDITION_ALWAYS,
+		-- not AUX
+		SEQ_CONDITION_DJNZ
+	);
+	type cpu_seq_control_t is record
+		cond: cpu_seq_branch_condition_t;
+		run_next_true: cpu_mcd_entry_t;
+		run_next_false: cpu_mcd_entry_t;
+		halt: boolean;
+	end record cpu_seq_control_t;
 	
 	type cpu_mucode_entry_idx_t is (
 		-- No operation

@@ -18,6 +18,7 @@ for arg in "$@"; do
 		ghdl -a -Wall \
 			src/clk.vhdl \
 			src/cpu/cpu_pack.vhdl \
+			src/cpu/cpu_mcd.vhdl \
 			src/cpu/cpu_pfq.vhdl \
 			src/cpu/cpu.vhdl \
 			src/ram.vhdl \
