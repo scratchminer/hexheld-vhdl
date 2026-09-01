@@ -8,7 +8,7 @@ package hivecraft_cpu_pack is
 	type cpu_alu_data_location_t is (
 		-- Zero
 		ALU_DATA_ZERO,
-		-- Current ALU operand size
+		-- 1, 2, or 4, depending on the current ALU operand size
 		ALU_DATA_SIZE,
 		-- 8, 16, or 24, depending on the current ALU operand size
 		ALU_DATA_NUMBITS,
@@ -93,7 +93,7 @@ package hivecraft_cpu_pack is
 		ALU_AUX_SET,
 		-- Use the aux latch as the ALU zero flag
 		ALU_AUX_ZERO,
-		-- Write the ALU carry flag to the aux latch, and use the aux latch as the ALU carry in
+		-- Use the aux latch as the ALU carry flag
 		ALU_AUX_CARRY
 	);
 	type cpu_alu_carry_mode_t is (
@@ -174,13 +174,13 @@ package hivecraft_cpu_pack is
 		BUS_CYCLE_READ_BYTE,
 		-- Read the data bus into the lower 16 bits of MDR
 		BUS_CYCLE_READ_WORD,
-		-- Read the lower 8 bits of the data bus into the higher 8 bits of MDR
+		-- Read the lower 8 bits of the data bus into the highest 8 bits of MDR
 		BUS_CYCLE_READ_HIGH,
 		-- Write the lower 8 bits of MDR to the lower 8 bits of the data bus
 		BUS_CYCLE_WRITE_BYTE,
 		-- Write the lower 16 bits of MDR to the data bus
 		BUS_CYCLE_WRITE_WORD,
-		-- Read the higher 8 bits of MDR to the lower 8 bits of the data bus
+		-- Read the highest 8 bits of MDR to the lower 8 bits of the data bus
 		BUS_CYCLE_WRITE_HIGH
 	);
 	type cpu_bus_control_t is record
@@ -291,8 +291,39 @@ package hivecraft_cpu_pack is
 		-- Add inverted borrow from last cycle to quotient register (DIVU)
 		MCD_DIVU_ADX_SRC_LO,
 		-- Perform repeat step (DIVU)
-		MCD_DIVU_REPEAT
-		-- todo: DIVS
+		MCD_DIVU_REPEAT,
+		-- Set sign flag to highest bit of bitwise XOR of operand latch and remainder register (DIVS)
+		MCD_DIVS_XOR_OPERAND,
+		-- Set overflow flag to highest bit of remainder register and set zero flag high (DIVS)
+		MCD_DIVS_TST_SRC_HI,
+		-- Negate quotient register and set zero flag low if overflow flag is high (DIVS)
+		MCD_DIVS_NEG_SRC_LO,
+		-- Negate remainder register with carry from MCD_DIVS_NEG_SRC_LO if overflow flag is high (DIVS)
+		MCD_DIVS_NGX_SRC_HI,
+		-- Skip MCD_DIVS_NEG_OPERAND if operand latch is positive (DIVS)
+		MCD_DIVS_TST_OPERAND,
+		-- Negate operand latch if operand latch is negative (DIVS)
+		MCD_DIVS_NEG_OPERAND,
+		-- Shift quotient register left (DIVS)
+		MCD_DIVS_SLA_SRC_LO,
+		-- Shift remainder register left with carry (DIVS)
+		MCD_DIVS_RL_SRC_HI,
+		-- Compare operand latch with remainder register (DIVS)
+		MCD_DIVS_CP_OPERAND,
+		-- Conditionally subtract operand latch from remainder register (DIVS)
+		MCD_DIVS_SUB_OPERAND,
+		-- Add inverted borrow from MCD_DIVS_CP_OPERAND to quotient register (DIVS)
+		MCD_DIVS_ADX_SRC_LO,
+		-- Perform repeat step (DIVS)
+		MCD_DIVS_REPEAT,
+		-- Skip MCD_DIVS_NEG_REM if zero flag is high (DIVS)
+		MCD_DIVS_TST_REM,
+		-- Negate remainder register if zero flag is low (DIVS)
+		MCD_DIVS_NEG_REM,
+		-- Skip MCD_DIVS_NEG_QUO if sign flag is low (DIVS)
+		MCD_DIVS_TST_QUO,
+		-- Negate quotient register if sign flag is high (DIVS)
+		MCD_DIVS_NEG_QUO
 	);
 	type cpu_mcd_entry_t is record
 		entry_type: cpu_mcd_entry_type_t;
@@ -344,82 +375,6 @@ package hivecraft_cpu_pack is
 	type cpu_mucode_entry_idx_t is (
 		-- No operation
 		MU_NONE,
-		-- Request memory (@imm)
-		MU_MREQ_ABS,
-		-- Request memory (@imm+reg)
-		MU_MREQ_ABS_IDX,
-		-- Request memory (@reg)
-		MU_MREQ_REG_IND,
-		-- Request memory (@reg+)
-		MU_MREQ_REG_IND_POSTINC,
-		-- Request memory (@-reg)
-		MU_MREQ_REG_IND_PREDEC,
-		-- Request memory (@reg+imm)
-		MU_MREQ_REG_REL,
-		-- Request memory (@reg+reg)
-		MU_MREQ_REG_IDX,
-		-- Request memory (@PGC+imm)
-		MU_MREQ_PGC_REL,
-		-- Request memory (@PGC+(offset8<<1))
-		MU_MREQ_PGC_OFF_SHORT,
-		-- Request memory (@PGC+hml)
-		MU_MREQ_PGC_OFF_LONG,
-		-- Request memory (@MAR+)
-		MU_MREQ_MAR_POSTINC,
-		-- Request memory (@MAR+, before all 24-bit register post-increments)
-		MU_MREQ_MAR_POSTINC_REG_POSTINC,
-		-- Perform a register post-increment
-		MU_POSTINC,
-		-- Perform a repeat step (REPI)
-		MU_REPI,
-		-- Perform a repeat step (MULU / MULS / DIVU)
-		MU_MULDIV_REPI,
-		-- Perform a repeat step (DIVS)
-		MU_DIVS_REPI,
-		-- Perform a repeat step (REPR)
-		MU_REPR,
-		-- Subtract 2 from PGC so an interrupt during a REPR will push the correct PGC value
-		MU_ADJUST_PGC,
-		-- Load the factorA latch with a register operand (MULU / MULS, setup phase)
-		MU_MUL_LD_FACTORA,
-		-- Clear the low destination register (MULU / MULS, setup phase)
-		MU_MUL_CLR_REG,
-		-- Clear R0, the high destination register (MULU / MULS, setup phase)
-		MU_MUL_CLR_R0,
-		-- Load the REPI state with the instruction size in bits (MULU / MULS / DIVU / DIVS, setup phase)
-		MU_MULDIV_LD_REPI,
-		-- Perform an SLA operation on the low destination register (MULU / MULS, loop phase)
-		MU_MUL_SLA_REG,
-		-- Perform an RL operation on R0 (MULU / MULS, loop phase)
-		MU_MUL_RL_R0,
-		-- Perform an SLA operation on the factorB latch (MULU / MULS, loop phase)
-		MU_MUL_SLA_FACTORB,
-		-- Conditionally add the factorB latch to the low destination register (MULU / MULS, loop phase)
-		MU_MUL_ADD_REG,
-		-- Process any carry from MU_MUL_ADD_REG by adding it to R0 (MULU / MULS, loop phase)
-		MU_MUL_ADX_R0,
-		-- Store the sign bit of R0 (DIVS, setup phase)
-		MU_DIVS_TST_R0,
-		-- Conditionally perform a NEG operaton on R0 if it is negative (DIVS, setup phase)
-		MU_DIVS_ABS_R0,
-		-- Store the sign bit of the factorB latch (DIVS, setup phase)
-		MU_DIVS_TST_FACTORB,
-		-- Conditionally perform a NEG operaton on the factorB latch if it is negative (DIVS, setup phase)
-		MU_DIVS_ABS_FACTORB,
-		-- Perform an SLA operation on the destination register (DIVU / DIVS, loop phase)
-		MU_DIV_SLA_REG,
-		-- Perform an RL operation on R0 (DIVU / DIVS, loop phase)
-		MU_DIV_RL_R0,
-		-- Subtract the factorB latch from R0 and throw the result away, saving the inverted borrow bit (DIVU / DIVS, loop phase)
-		MU_DIV_CP_FACTORB,
-		-- Process the inverted borrow from MU_DIV_CP_FACTORB by adding it to the destination register (DIVU / DIVS, loop phase)
-		MU_DIV_ADX_REG,
-		-- Conditionally subtract the factorB latch from R0 (DIVU / DIVS, loop phase)
-		MU_DIV_SUB_FACTORB,
-		-- Conditionally perform a NEG operation on R0 if the result of MU_DIVS_TST_R0 was 1 (DIVS, post-loop phase)
-		MU_DIVS_NEG_R0,
-		-- Conditionally perform a NEG operation on the destination register if the exclusive-OR of the two bit tests was 1 (DIVS, post-loop phase)
-		MU_DIVS_NEG_REG,
 		-- Decrement the stack pointer by 4 in preparation for pushing PGC (jumps / calls / exceptions / interrupts)
 		MU_CALL_SP_IND_PREDEC,
 		-- Write PGC to @SP (jumps / calls / exceptions / interrupts)

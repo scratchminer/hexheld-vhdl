@@ -90,6 +90,7 @@ begin
 					ready_n(0) <= '1';
 				end if;
 			end if;
+			
 			-- Latch a new word from the data bus if possible
 			if branch_n = '1' and WAIT_n = '1' and ready_n(0) = '1' then
 				word0 <= data_i;
