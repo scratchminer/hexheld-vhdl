@@ -1,8 +1,8 @@
 #!/bin/sh
 
-CWD="$PWD"
+workdir="$PWD"
 
-cd "$(dirname \"$0\")"
+cd $(dirname "$0")
 
 if [ $# -eq 0 ]; then
 	echo "Usage: sim.sh [-c / --clean] (testbenches...)"
@@ -18,6 +18,7 @@ for arg in "$@"; do
 		ghdl -a -Wall \
 			src/clk.vhdl \
 			src/cpu/cpu_pack.vhdl \
+			src/cpu/cpu_alu.vhdl \
 			src/cpu/cpu_mcd.vhdl \
 			src/cpu/cpu_pfq.vhdl \
 			src/cpu/cpu.vhdl \
@@ -32,4 +33,4 @@ for arg in "$@"; do
 	fi
 done
 
-cd "$CWD"
+cd "$workdir"

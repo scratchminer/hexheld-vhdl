@@ -24,7 +24,7 @@ end hivecraft_cpu_mcd;
 architecture rtl of hivecraft_cpu_mcd is
 	-- Default ALU control: no ALU operation
 	constant alu_default: cpu_alu_control_t := (
-		operation => ALU_ADD,
+		operation => ALU_OP_ADD,
 		src1 => (
 			size => ALU_SIZE_POINTER,
 			location => ALU_DATA_ZERO,
@@ -844,7 +844,7 @@ begin
 					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_DIVS_XOR_OPERAND =>
 					alu_ctrl <= alu_default;
-					alu_ctrl.operation <= ALU_XOR;
+					alu_ctrl.operation <= ALU_OP_XOR;
 					alu_ctrl.src1.size <= addr.inst_size;
 					alu_ctrl.src1.location <= ALU_DATA_LATCH_OPERAND;
 					alu_ctrl.src2.size <= addr.inst_size;
@@ -856,7 +856,6 @@ begin
 					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_DIVS_TST_SRC_HI =>
 					alu_ctrl <= alu_default;
-					alu_ctrl.operation <= ALU_ADD;
 					alu_ctrl.src1.size <= addr.inst_size;
 					alu_ctrl.src1.location <= ALU_DATA_ZERO;
 					alu_ctrl.src2.size <= addr.inst_size;
@@ -873,7 +872,6 @@ begin
 					seq_ctrl.run_next_false.inst_size <= addr.inst_size;
 				when MCD_DIVS_NEG_SRC_LO =>
 					alu_ctrl <= alu_default;
-					alu_ctrl.operation <= ALU_ADD;
 					alu_ctrl.src1.size <= addr.inst_size;
 					alu_ctrl.src1.location <= ALU_DATA_ZERO;
 					alu_ctrl.src2.size <= addr.inst_size;
@@ -889,7 +887,6 @@ begin
 					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_DIVS_NGX_SRC_HI =>
 					alu_ctrl <= alu_default;
-					alu_ctrl.operation <= ALU_ADD;
 					alu_ctrl.src1.size <= addr.inst_size;
 					alu_ctrl.src1.location <= ALU_DATA_ZERO;
 					alu_ctrl.src2.size <= addr.inst_size;
@@ -916,7 +913,6 @@ begin
 					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_DIVS_NEG_OPERAND =>
 					alu_ctrl <= alu_default;
-					alu_ctrl.operation <= ALU_ADD;
 					alu_ctrl.src1.size <= addr.inst_size;
 					alu_ctrl.src1.location <= ALU_DATA_ZERO;
 					alu_ctrl.src2.size <= addr.inst_size;
@@ -1029,7 +1025,6 @@ begin
 					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_DIVS_NEG_REM =>
 					alu_ctrl <= alu_default;
-					alu_ctrl.operation <= ALU_ADD;
 					alu_ctrl.src1.size <= addr.inst_size;
 					alu_ctrl.src1.location <= ALU_DATA_ZERO;
 					alu_ctrl.src2.size <= addr.inst_size;
@@ -1055,7 +1050,6 @@ begin
 					seq_ctrl.run_next_true.inst_size <= addr.inst_size;
 				when MCD_DIVS_NEG_QUO =>
 					alu_ctrl <= alu_default;
-					alu_ctrl.operation <= ALU_ADD;
 					alu_ctrl.src1.size <= addr.inst_size;
 					alu_ctrl.src1.location <= ALU_DATA_ZERO;
 					alu_ctrl.src2.size <= addr.inst_size;

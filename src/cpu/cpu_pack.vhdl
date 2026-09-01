@@ -65,7 +65,7 @@ package hivecraft_cpu_pack is
 		-- Outputs from a 3-to-8 demultiplexer hooked up to bits 8-10 of the P0 register
 		ALU_DATA_DMX_P0
 	);
-	type cpu_alu_operation_t is (ALU_ADD, ALU_AND, ALU_OR, ALU_XOR);
+	type cpu_alu_operation_t is (ALU_OP_ADD, ALU_OP_AND, ALU_OP_OR, ALU_OP_XOR);
 	type cpu_alu_shift_operation_t is (
 		-- ABCDEFGH to ABCDEFGH; carry out = 0
 		ALU_SHIFT_NONE,
