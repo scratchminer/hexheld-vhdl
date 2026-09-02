@@ -147,6 +147,7 @@ package hivecraft_cpu_pack is
 		mode_carry: cpu_alu_carry_mode_t;
 		mode_zero: cpu_alu_zero_mode_t;
 		mode_overflow: cpu_alu_overflow_mode_t;
+		flags_mask: std_logic_vector(7 downto 0);
 	end record cpu_alu_control_t;
 	
 	type cpu_bus_address_mode_t is (

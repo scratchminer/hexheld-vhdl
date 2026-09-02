@@ -209,8 +209,8 @@ begin
 			
 			-- Make sure no latches are synthesized for src1_o, src2_o, or flags_o
 			src1_o <= std_logic_vector(src1_int);
-			src2_o <= std_logic_vector(src1_int);
-			flags_o <= flags_o_s;
+			src2_o <= std_logic_vector(src2_int);
+			flags_o <= (flags_i and not control.flags_mask) or (flags_o_s and control.flags_mask);
 		elsif falling_edge(CLK) then
 			flags_o_s := x"00";
 			
@@ -334,8 +334,8 @@ begin
 			
 			-- Make sure no latches are synthesized for src1_o, src2_o, or flags_o
 			src1_o <= std_logic_vector(src1_int);
-			src2_o <= std_logic_vector(src1_int);
-			flags_o <= flags_o_s;
+			src2_o <= std_logic_vector(src2_int);
+			flags_o <= (flags_i and not control.flags_mask) or (flags_o_s and control.flags_mask);
 		end if;
 	end process;
 end rtl;

@@ -64,7 +64,6 @@ architecture rtl of hivecraft_cpu is
 	signal dcd_branch_addr: std_logic_vector(23 downto 0);
 	
 	signal mcd_alu_ctrl: cpu_alu_control_t;
-	signal mcd_reg_ctrl: std_logic_vector(7 downto 0);
 	signal mcd_bus_ctrl: cpu_bus_control_t;
 	signal mcd_seq_ctrl: cpu_seq_control_t;
 	
@@ -110,7 +109,6 @@ begin
 	cpu_mcd: entity work.hivecraft_cpu_mcd(rtl) port map (
 		addr => mcd_default,
 		alu_ctrl => mcd_alu_ctrl,
-		reg_ctrl => mcd_reg_ctrl,
 		bus_ctrl => mcd_bus_ctrl,
 		seq_ctrl => mcd_seq_ctrl
 	);
@@ -173,7 +171,7 @@ begin
 				end if;
 			end if;
 			
-			-- Hold the output data bus steady if we're in the middle of a write
+			-- Hold D_o steady if waiting on a write
 			if WR_n_s = '0' then
 				D_o <= D_o_s;
 			else
