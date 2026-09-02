@@ -121,8 +121,6 @@ package hivecraft_cpu_pack is
 		ALU_OVERFLOW_NORMAL,
 		-- Clear the ALU overflow flag
 		ALU_OVERFLOW_CLEAR,
-		-- OR the ALU overflow flag with the aux latch
-		ALU_OVERFLOW_ACCUMULATE,
 		-- Write the ALU shifter carry to the ALU overflow flag
 		ALU_OVERFLOW_CARRY
 	);
