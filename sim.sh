@@ -19,6 +19,7 @@ for arg in "$@"; do
 			src/clk.vhdl \
 			src/cpu/cpu_pack.vhdl \
 			src/cpu/cpu_alu.vhdl \
+			src/cpu/cpu_bus.vhdl \
 			src/cpu/cpu_mcd.vhdl \
 			src/cpu/cpu_pfq.vhdl \
 			src/cpu/cpu.vhdl \

@@ -15,24 +15,26 @@ entity hivecraft_cpu_alu is
 		-- Control signals
 		RESET_n: in std_logic;
 		WAIT_n: in std_logic;
+		
+		-- Input from MCD
 		control: in cpu_alu_control_t;
 		
-		-- Source values
+		-- Inputs from SEQ
 		src1_i: in std_logic_vector(23 downto 0);
 		src2_i: in std_logic_vector(23 downto 0);
 		
-		-- Source value outputs (for MAR/MDR latching)
+		-- Outputs to BUS
 		src1_o: out std_logic_vector(23 downto 0);
 		src2_o: out std_logic_vector(23 downto 0);
 		
-		-- Destination value
+		-- Output to BUS and SEQ
 		dest: out std_logic_vector(23 downto 0);
 		
-		-- Flag inputs
+		-- Inputs from REG
 		aux_i: in std_logic;
 		flags_i: in std_logic_vector(7 downto 0);
 		
-		-- Flag outputs
+		-- Outputs to REG
 		aux_o: out std_logic;
 		flags_o: out std_logic_vector(7 downto 0)
 	);
@@ -43,6 +45,7 @@ architecture rtl of hivecraft_cpu_alu is
 	signal shifter_carry: std_logic;
 	signal dest_s: unsigned(24 downto 0);
 begin
+	-- Output port that needs to be readable
 	dest <= std_logic_vector(dest_s(23 downto 0));
 	
 	process (control.mode_aux, control.mode_carry, aux_i, flags_i) is
@@ -74,15 +77,15 @@ begin
 			src2_o <= x"000000";
 			shifter_carry <= '0';
 			dest_s <= to_unsigned(0, 25);
-			flags_o_s := x"00";
+			flags_o <= x"00";
 		elsif rising_edge(CLK) then
 			if WAIT_n = '1' then
 				src1_int := unsigned(src1_i);
+				src2_int := unsigned(src2_i);
 				
 				-- Shift src2 if requested
 				case control.src2_shift is
 					when ALU_SHIFT_NONE =>
-						src2_int := unsigned(src2_i);
 						shifter_carry <= '0';
 					when ALU_SHIFT_LEFT =>
 						src2_int := shift_left(src2_int, 1);
@@ -185,10 +188,6 @@ begin
 					end if;
 				end if;
 				
-				-- Set the source outputs
-				src1_o <= std_logic_vector(src1_int);
-				src2_o <= std_logic_vector(src2_int);
-				
 				-- Prepare the operation
 				case control.operation is
 					when ALU_OP_ADD =>
@@ -200,7 +199,7 @@ begin
 								dest_s(8 downto 4) <= src1_int(8 downto 4) + src2_int(8 downto 4);
 							end if;
 						else
-							dest_s <= src1_int + src2_int;
+							dest_s <= ('0' & src1_int) + ('0' & src2_int);
 						end if;
 					when ALU_OP_AND =>
 						dest_s <= src1_int and src2_int;
@@ -210,8 +209,15 @@ begin
 						dest_s <= src1_int xor src2_int;
 				end case;
 			end if;
+			
+			-- Make sure no latches are synthesized for src1_o, src2_o, or flags_o
+			src1_o <= std_logic_vector(src1_int);
+			src2_o <= std_logic_vector(src1_int);
+			flags_o <= flags_o_s;
 		elsif falling_edge(CLK) then
 			if WAIT_n = '1' then
+				flags_o_s := x"00";
+				
 				-- Set the sign flag
 				if control.dest.size = ALU_SIZE_BYTE then
 					flags_o_s(7) := dest_s(7);
@@ -293,7 +299,7 @@ begin
 								flags_o_s(2) := dest_s(24) xor (src1_int(23) and src2_int(23));
 							end if;
 						else
-							parity := '0';
+							parity := '1';
 							if control.dest.size = ALU_SIZE_BYTE then
 								for i in 0 to 7 loop
 									parity := parity xor dest_s(i);
@@ -329,9 +335,12 @@ begin
 				
 				-- Preserve the decimal flag
 				flags_o_s(1) := flags_i(1);
-				
-				flags_o <= flags_o_s;
 			end if;
+			
+			-- Make sure no latches are synthesized for src1_o, src2_o, or flags_o
+			src1_o <= std_logic_vector(src1_int);
+			src2_o <= std_logic_vector(src1_int);
+			flags_o <= flags_o_s;
 		end if;
 	end process;
 end rtl;

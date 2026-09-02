@@ -9,20 +9,26 @@ entity hivecraft_cpu_pfq is
 		-- Clock
 		CLK: in std_logic;
 		
+		-- Control signals
+		RESET_n: in std_logic;
+		WAIT_n: in std_logic;
+		
 		-- Buses
 		addr_i: in std_logic_vector(23 downto 0);
 		addr_o: out std_logic_vector(23 downto 0);
 		data_i: in std_logic_vector(15 downto 0);
 		data_o: out std_logic_vector(15 downto 0);
 		
-		-- Control signals
-		RESET_n: in std_logic;
-		WAIT_n: in std_logic;
+		-- Outputs to CPU top level
 		read_n: out std_logic;
 		word_n: out std_logic;
-		word_ready_n: out std_logic;
+		
+		-- Inputs from DCD
 		branch_n: in std_logic;
-		hold_n: in std_logic
+		hold_n: in std_logic;
+		
+		-- Outputs to DCD
+		word_ready_n: out std_logic
 	);
 end hivecraft_cpu_pfq;
 

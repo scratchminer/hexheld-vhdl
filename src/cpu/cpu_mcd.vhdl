@@ -9,9 +9,11 @@ use work.hivecraft_cpu_pack.all;
 
 entity hivecraft_cpu_mcd is
 	port (
-		-- Inputs from SEQ
+		-- Control signal
+		WAIT_n: in std_logic;
+		
+		-- Input from SEQ
 		addr: in cpu_mcd_entry_t;
-		read_n: in std_logic;
 		
 		-- Outputs to ALU, REG, BUS, and SEQ
 		alu_ctrl: out cpu_alu_control_t;
@@ -75,9 +77,9 @@ architecture rtl of hivecraft_cpu_mcd is
 		halt => false
 	);
 begin
-	process (read_n, addr) is
+	process (WAIT_n, addr) is
 	begin
-		if read_n = '0' then
+		if WAIT_n = '1' then
 			case addr.entry_type is
 				when MCD_NOP =>
 					alu_ctrl <= alu_default;
@@ -1069,6 +1071,11 @@ begin
 					bus_ctrl <= bus_default;
 					seq_ctrl <= seq_default;
 			end case;
+		else
+			alu_ctrl <= alu_default;
+			reg_ctrl <= reg_default;
+			bus_ctrl <= bus_default;
+			seq_ctrl <= seq_default;
 		end if;
 	end process;
 end rtl;

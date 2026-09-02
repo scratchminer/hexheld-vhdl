@@ -152,17 +152,17 @@ package hivecraft_cpu_pack is
 	type cpu_bus_address_mode_t is (
 		-- Do not write to MAR
 		BUS_ADDRESS_NONE,
-		-- Write the ALU's first operand to MAR in the first half of the cycle
+		-- Write the ALU's first operand to MAR in the first half of the cycle (rising edge)
 		BUS_ADDRESS_ALU_SRC1,
-		-- Write the ALU's result to MAR in the second half of the cycle
+		-- Write the ALU's result to MAR in the second half of the cycle (falling edge)
 		BUS_ADDRESS_ALU_DEST
 	);
 	type cpu_bus_data_mode_t is (
 		-- Do not write to MDR
 		BUS_DATA_NONE,
-		-- Write the ALU's second operand to MDR in the first half of the cycle
+		-- Write the ALU's second operand to MDR in the first half of the cycle (rising edge)
 		BUS_DATA_ALU_SRC2,
-		-- Write the ALU's result to MDR in the second half of the cycle
+		-- Write the ALU's result to MDR in the second half of the cycle (falling edge)
 		BUS_DATA_ALU_DEST
 	);
 	type cpu_bus_cycle_type_t is (
@@ -371,8 +371,6 @@ package hivecraft_cpu_pack is
 	end record cpu_seq_control_t;
 	
 	type cpu_mucode_entry_idx_t is (
-		-- No operation
-		MU_NONE,
 		-- Decrement the stack pointer by 4 in preparation for pushing PGC (jumps / calls / exceptions / interrupts)
 		MU_CALL_SP_IND_PREDEC,
 		-- Write PGC to @SP (jumps / calls / exceptions / interrupts)
