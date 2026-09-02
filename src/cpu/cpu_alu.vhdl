@@ -295,22 +295,22 @@ begin
 						else
 							parity := '0';
 							if control.dest.size = ALU_SIZE_BYTE then
-								for i in range 0 to 7 loop
+								for i in 0 to 7 loop
 									parity := parity xor dest_s(i);
 								end loop;
 							elsif control.dest.size = ALU_SIZE_WORD then
-								for i in range 0 to 15 loop
+								for i in 0 to 15 loop
 									parity := parity xor dest_s(i);
 								end loop;
 							else
-								for i in range 0 to 23 loop
+								for i in 0 to 23 loop
 									parity := parity xor dest_s(i);
 								end loop;
 							end if;
 							flags_o_s(2) := parity;
 						end if;
 					when ALU_OVERFLOW_CLEAR =>
-						flags_o_s(2) <= '0';
+						flags_o_s(2) := '0';
 					when ALU_OVERFLOW_CARRY =>
 						flags_o_s(2) := shifter_carry;
 				end case;
