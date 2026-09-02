@@ -77,7 +77,6 @@ begin
 	cpu_alu: entity work.hivecraft_cpu_alu(rtl) port map (
 		CLK => CLK,
 		RESET_n => RESET_n,
-		WAIT_n => WAIT_n,
 		control => mcd_alu_ctrl,
 		src1_i => alu_src1_i,
 		src2_i => alu_src2_i,
@@ -109,7 +108,6 @@ begin
 	);
 	
 	cpu_mcd: entity work.hivecraft_cpu_mcd(rtl) port map (
-		WAIT_n => WAIT_n,
 		addr => mcd_default,
 		alu_ctrl => mcd_alu_ctrl,
 		reg_ctrl => mcd_reg_ctrl,
@@ -163,6 +161,7 @@ begin
 	begin
 		if RESET_n = '0' then
 			IACK_n <= '1';
+			D_o <= (others => 'Z');
 			BUSACK_n <= '1';
 			HALT_n <= '1';
 			dcd_branch_n <= '0';
@@ -173,6 +172,13 @@ begin
 					dcd_branch_n <= '1';
 				end if;
 			end if;
+			
+			-- Hold the output data bus steady if we're in the middle of a write
+			if WR_n_s = '0' then
+				D_o <= D_o_s;
+			else
+				D_o <= (others => 'Z');
+			end if;
 		elsif falling_edge(CLK) then
 			if WAIT_n = '1' then
 				-- Complete a write if needed
@@ -181,6 +187,9 @@ begin
 				else
 					D_o <= (others => 'Z');
 				end if;
+			else
+				-- Make sure no latch is synthesized for D_o
+				D_o <= (others => 'Z');
 			end if;
 		end if;
 	end process;
