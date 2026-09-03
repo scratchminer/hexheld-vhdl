@@ -46,11 +46,11 @@ architecture rtl of hivecraft_cpu is
 	signal WR_n_s: std_logic;
 	
 	-- Interconnects
-	signal alu_src1_i: std_logic_vector(23 downto 0) := x"000000";
-	signal alu_src2_i: std_logic_vector(23 downto 0) := x"000000";
 	signal alu_src1_o: std_logic_vector(23 downto 0);
 	signal alu_src2_o: std_logic_vector(23 downto 0);
 	signal alu_dest: std_logic_vector(23 downto 0);
+	signal alu_aux_o: std_logic;
+	signal alu_flags_o: std_logic_vector(7 downto 0);
 	
 	signal bus_read_n: std_logic;
 	signal bus_write_n: std_logic;
@@ -72,20 +72,25 @@ architecture rtl of hivecraft_cpu is
 	signal pfq_word_ready_n: std_logic;
 	signal pfq_addr: std_logic_vector(23 downto 0);
 	signal pfq_data_o: std_logic_vector(15 downto 0);
+	
+	signal reg_src1: std_logic_vector(23 downto 0);
+	signal reg_src2: std_logic_vector(23 downto 0);
+	signal reg_aux_o: std_logic;
+	signal reg_flags_o: std_logic_vector(7 downto 0);
 begin
 	cpu_alu: entity work.hivecraft_cpu_alu(rtl) port map (
 		CLK => CLK,
 		RESET_n => RESET_n,
 		control => mcd_alu_ctrl,
-		src1_i => alu_src1_i,
-		src2_i => alu_src2_i,
+		src1_i => reg_src1,
+		src2_i => reg_src2,
 		src1_o => alu_src1_o,
 		src2_o => alu_src2_o,
 		dest => alu_dest,
-		aux_i => '0',
-		flags_i => x"00"
-		-- aux_o => reg_aux_i,
-		-- flags_o => reg_flags_i
+		aux_i => reg_aux_o,
+		flags_i => reg_flags_o,
+		aux_o => alu_aux_o,
+		flags_o => alu_flags_o
 	);
 	
 	cpu_bus: entity work.hivecraft_cpu_bus(rtl) port map (
@@ -126,6 +131,31 @@ begin
 		branch_n => dcd_branch_n,
 		hold_n => '0',
 		word_ready_n => pfq_word_ready_n
+	);
+	
+	cpu_reg: entity work.hivecraft_cpu_reg(rtl) port map (
+		CLK => CLK,
+		RESET_n => RESET_n,
+		dest => alu_dest,
+		aux_i => alu_aux_o,
+		flags_i => alu_flags_o,
+		src1 => reg_src1,
+		src2 => reg_src2,
+		aux_o => reg_aux_o,
+		flags_o => reg_flags_o,
+		mar => bus_mar,
+		mdr => bus_mdr,
+		immword0 => x"0000",
+		immword1 => x"0000",
+		immword2 => x"0000",
+		rm_high => '0',
+		pgc_inc_n => '1',
+		-- pgc => reg_pgc,
+		irl_i => "000",
+		-- irl_o => reg_irl_o,
+		src1_location => mcd_alu_ctrl.src1,
+		src2_location => mcd_alu_ctrl.src2,
+		dest_location => mcd_alu_ctrl.dest
 	);
 	
 	-- Output port that needs to be readable

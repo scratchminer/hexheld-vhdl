@@ -15,11 +15,6 @@ entity hivecraft_cpu_reg is
 		-- Reset signal
 		RESET_n: in std_logic;
 		
-		-- Inputs from SEQ
-		src1_location: in cpu_alu_data_dst_t;
-		src2_location: in cpu_alu_data_dst_t;
-		dest_location: in cpu_alu_data_dst_t;
-		
 		-- Inputs from ALU
 		dest: in std_logic_vector(23 downto 0);
 		aux_i: in std_logic;
@@ -51,7 +46,12 @@ entity hivecraft_cpu_reg is
 		irl_i: in std_logic_vector(2 downto 0);
 		
 		-- Output to IRH
-		irl_o: out std_logic_vector(2 downto 0)
+		irl_o: out std_logic_vector(2 downto 0);
+		
+		-- Inputs from SEQ
+		src1_location: in cpu_alu_data_src_t;
+		src2_location: in cpu_alu_data_src_t;
+		dest_location: in cpu_alu_data_dst_t
 	);
 end hivecraft_cpu_reg;
 
@@ -82,8 +82,10 @@ begin
 			pgc_s <= x"FFCFF0";
 			repi <= "00000";
 			repr <= "000";
-			flags_o_s <= x"00";
+			src1 <= x"000000";
+			src2 <= x"000000";
 			aux_o_s <= '0';
+			flags_o_s <= x"00";
 			irl_o_s <= "000";
 			factor <= x"000000";
 			operand <= x"000000";
