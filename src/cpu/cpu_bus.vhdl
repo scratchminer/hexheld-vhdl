@@ -33,7 +33,7 @@ entity hivecraft_cpu_bus is
 		src2: in std_logic_vector(23 downto 0);
 		dest: in std_logic_vector(23 downto 0);
 		
-		-- Outputs to SEQ
+		-- Outputs to REG
 		mar: out std_logic_vector(23 downto 0);
 		mdr: out std_logic_vector(23 downto 0)
 	);

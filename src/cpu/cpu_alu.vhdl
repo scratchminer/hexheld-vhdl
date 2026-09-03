@@ -18,18 +18,16 @@ entity hivecraft_cpu_alu is
 		-- Input from MCD
 		control: in cpu_alu_control_t;
 		
-		-- Inputs from SEQ
-		src1_i: in std_logic_vector(23 downto 0);
-		src2_i: in std_logic_vector(23 downto 0);
-		
 		-- Outputs to BUS
 		src1_o: out std_logic_vector(23 downto 0);
 		src2_o: out std_logic_vector(23 downto 0);
 		
-		-- Output to BUS and SEQ
+		-- Output to BUS and REG
 		dest: out std_logic_vector(23 downto 0);
 		
 		-- Inputs from REG
+		src1_i: in std_logic_vector(23 downto 0);
+		src2_i: in std_logic_vector(23 downto 0);
 		aux_i: in std_logic;
 		flags_i: in std_logic_vector(7 downto 0);
 		

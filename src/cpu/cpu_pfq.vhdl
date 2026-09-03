@@ -14,20 +14,20 @@ entity hivecraft_cpu_pfq is
 		WAIT_n: in std_logic;
 		
 		-- Buses
-		addr_i: in std_logic_vector(23 downto 0);
 		addr_o: out std_logic_vector(23 downto 0);
 		data_i: in std_logic_vector(15 downto 0);
 		data_o: out std_logic_vector(15 downto 0);
 		
 		-- Outputs to CPU top level
 		read_n: out std_logic;
-		word_n: out std_logic;
 		
 		-- Inputs from DCD
 		branch_n: in std_logic;
 		hold_n: in std_logic;
+		addr_i: in std_logic_vector(23 downto 0);
 		
 		-- Outputs to DCD
+		word_n: out std_logic;
 		word_ready_n: out std_logic
 	);
 end hivecraft_cpu_pfq;
@@ -45,10 +45,9 @@ architecture rtl of hivecraft_cpu_pfq is
 	signal ready_n: std_logic_vector(0 to 4);
 begin
 	-- Output ports that need to be readable
-	word_ready_n <= word_ready_n_s;
 	read_n <= read_n_s;
-	
 	addr_o <= addr_s;
+	word_ready_n <= word_ready_n_s;
 	
 	process (ready_n) is
 	begin
@@ -62,8 +61,8 @@ begin
 	process (CLK, RESET_n) is
 	begin
 		if RESET_n = '0' then
-			word_ready_n_s <= '1';
 			read_n_s <= '1';
+			word_ready_n_s <= '1';
 			word_n <= '1';
 			ready_n <= "11111";
 			addr_s <= x"FFCFF0";
@@ -105,7 +104,6 @@ begin
 		elsif falling_edge(CLK) then
 			if branch_n = '0' then
 				ready_n <= "11111";
-				addr_s <= addr_i;
 				word_n <= '1';
 				read_n_s <= '1';
 			elsif WAIT_n = '1' then
@@ -121,7 +119,7 @@ begin
 					word_n <= '1';
 				end if;
 				
-				-- Increment the target address if currently reading
+				-- Increment the address if currently reading
 				if read_n_s = '0' then
 					addr_s <= std_logic_vector(unsigned(addr_s) + 2);
 				end if;
