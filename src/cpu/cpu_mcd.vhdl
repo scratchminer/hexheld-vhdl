@@ -2,7 +2,6 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
 
 library work;
 use work.hivecraft_cpu_pack.all;
@@ -12,7 +11,7 @@ entity hivecraft_cpu_mcd is
 		-- Input from SEQ
 		addr: in cpu_mcd_entry_t;
 		
-		-- Outputs to ALU, REG, BUS, and SEQ
+		-- Outputs to ALU, BUS, and SEQ
 		alu_ctrl: out cpu_alu_control_t;
 		bus_ctrl: out cpu_bus_control_t;
 		seq_ctrl: out cpu_seq_control_t

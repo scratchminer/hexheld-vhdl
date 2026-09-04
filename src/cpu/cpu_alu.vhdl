@@ -187,13 +187,23 @@ begin
 			-- Prepare the operation
 			case control.operation is
 				when ALU_OP_ADD =>
-					if flags_i(1) = '1' then
+					if flags_i(1) = '1' and control.dest.size = ALU_SIZE_BYTE then
 						if src1_int(3 downto 0) + src2_int(3 downto 0) > 9 then
 							dest_s(3 downto 0) <= (src1_int(3 downto 0) + src2_int(3 downto 0)) - x"A";
+							if src1_int(8 downto 4) + src2_int(8 downto 4) + "00001" > 9 then
+								dest_s(8 downto 4) <= src1_int(8 downto 4) + src2_int(8 downto 4) - "01001";
+							else
+								dest_s(8 downto 4) <= src1_int(8 downto 4) + src2_int(8 downto 4) + "00001";
+							end if;
 						else
-							dest_s(3 downto 0) <= src1_int(3 downto 0) + src2_int(3 downto 0);
-							dest_s(8 downto 4) <= src1_int(8 downto 4) + src2_int(8 downto 4);
+							dest_s(3 downto 0) <= (src1_int(3 downto 0) + src2_int(3 downto 0));
+							if src1_int(8 downto 4) + src2_int(8 downto 4) > 9 then
+								dest_s(8 downto 4) <= src1_int(8 downto 4) + src2_int(8 downto 4) - "01010";
+							else
+								dest_s(8 downto 4) <= src1_int(8 downto 4) + src2_int(8 downto 4);
+							end if;
 						end if;
+						dest_s(23 downto 9) <= to_unsigned(0, 15);
 					else
 						dest_s <= ('0' & src1_int) + ('0' & src2_int);
 					end if;
